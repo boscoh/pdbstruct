@@ -190,5 +190,3 @@ def calc_asa(input_file, n_sphere):
     soup.set_atom_bfactors(atom_asas)
     write_pdb(soup, output_file)
     print(f"Wrote ASA as atom bfactors in {output_file}")
-
-

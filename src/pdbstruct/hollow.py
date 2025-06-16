@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
 import math
-import os
-import sys
 
 import tqdm
 
@@ -13,25 +11,33 @@ from .soup import Soup
 from .spacehash import SpaceHash, vertex_diff_sq
 
 
-def read_parameters(fname):
+def convert_to_data(d):
     class DataHolder:
         pass
 
+    result = DataHolder()
+    result.__dict__ = d
+    return result
+
+
+def read_parameters(fname):
     with open(fname, "r") as f:
-        result = DataHolder()
-        result.__dict__ = eval(f.read())
-        return result
+        return convert_to_data(eval(f.read()))
 
 
-def load_defaults():
-    if __name__ == "__main__":
-        this_dir = os.path.dirname(sys.argv[0])
-    else:
-        this_dir = os.path.dirname(__file__)
-    default_fname = os.path.join(this_dir, "hollow.config.txt")
-    return read_parameters(default_fname)
+defaults = convert_to_data(
+    {
+        "grid_spacing": 0.5,
+        "interior_probe": 1.4,
+        "surface_probe": 8.0,
+        "bfactor_probe": 0.0,
+        "res_type": "HOH",
+        "atom_type": "O",
+        "atom_field": "ATOM",
+        "is_skip_waters": True,
+    }
+)
 
-defaults = load_defaults()
 
 class HollowGrid:
     def __init__(self, grid_spacing, width, center):
@@ -415,7 +421,9 @@ def make_hollow_spheres(
         atom_asas = asa.calculate_asa_from_soup(soup, 1.4)
         soup.set_atom_bfactors(atom_asas)
 
-        print(f"Excluding exterior of surface shell from grid with {surface_probe:.1f} Å probe")
+        print(
+            f"Excluding exterior of surface shell from grid with {surface_probe:.1f} Å probe"
+        )
         bfactors = [atom_proxy.load(i_atom).bfactor for i_atom in atom_indices]
         surface_vertex_indices = [i for i, b in enumerate(bfactors) if b >= 9]
         grid.exclude_surface(vertices, radii, surface_vertex_indices, surface_probe)

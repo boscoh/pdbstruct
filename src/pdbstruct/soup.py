@@ -693,4 +693,3 @@ class Soup:
         for i_atom in range(self.get_atom_count()):
             atom_proxy.load(i_atom)
             atom_proxy.bfactor = bfactors[i_atom]
-

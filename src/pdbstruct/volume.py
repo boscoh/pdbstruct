@@ -307,4 +307,3 @@ def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None)
 
     print(f"Occupied points: {n_points}")
     print(f"Volume: {volume:.2f} Å³")
-
