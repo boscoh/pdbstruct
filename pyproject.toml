@@ -5,13 +5,13 @@ description = "python software to display protein channels"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "click>=8.2.1",
     "tqdm>=4.67.1",
 ]
 
 [project.scripts]
 hollow = "pdbstruct.hollow:main"
-hollow-asa = "pdbstruct.asa:main"
-hollow-vol = "pdbstruct.volume:main"
+pdbstruct = "pdbstruct.cli:cli"
 
 [tool.uv]
 package = true
