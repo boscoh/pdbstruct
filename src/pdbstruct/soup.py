@@ -203,6 +203,17 @@ class AtomProxy:
         """Set model number"""
         self.soup.atom_store.model[self.i_atom] = model
 
+    def __repr__(self):
+        """String representation of atom"""
+        if self.i_atom is None:
+            return "AtomProxy(unloaded)"
+
+        res_proxy = self.soup.get_residue_proxy(self.i_res)
+        return (
+            f"{res_proxy.chain}{res_proxy.res_num}{res_proxy.ins_code.strip()}-{res_proxy.res_type}:{self.atom_type}"
+        )
+
+
 
 class ResidueProxy:
     """Proxy for accessing residue data from stores"""
@@ -727,3 +738,4 @@ class Soup:
             print(f"Skipping {n_water} water atoms -> {len(atom_indices)} atoms")
 
         return atom_indices
+

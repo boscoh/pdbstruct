@@ -280,7 +280,7 @@ class CifParser:
                     res_type = tokens[5]
                     chain = tokens[6]
                     entity = tokens[7]
-                    ins_code = "" if tokens[9] == "?" else tokens[9]
+                    ins_code = " " if tokens[9] == "?" else tokens[9]
                     x = float(tokens[10])
                     y = float(tokens[11])
                     z = float(tokens[12])
@@ -455,10 +455,6 @@ def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
 
     if parser.error:
         print(f"Warning: Parser error - {parser.error}")
-
-    print(
-        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{filename}`"
-    )
 
     return soup
 

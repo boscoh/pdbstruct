@@ -268,6 +268,9 @@ def calc_asa(input_file, n_sphere, skip_waters: bool=False):
                               If None, calculates for all atoms.
     """
     soup = load_soup(input_file, scrub=True)
+    print(
+        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
+    )
 
     if soup.is_empty():
         print("Error: No atoms found in input file")

@@ -672,124 +672,124 @@ class TestAdvancedFunctions(unittest.TestCase):
         cross_parallel_axis = vector3d.cross_product_vec(v_parallel, axis)
         self.assertAlmostEqual(vector3d.vec_length(cross_parallel_axis), 0.0, places=6)
 
-    class TestVector3dIntegration(unittest.TestCase):
-        """Integration tests for Vector3d operations working together."""
+class TestVector3dIntegration(unittest.TestCase):
+    """Integration tests for Vector3d operations working together."""
 
-        def test_orthogonal_basis_construction(self):
-            """Test construction of orthogonal basis from arbitrary vector."""
-            # Start with arbitrary vector
-            v1 = vector3d.Vector3d(1.0, 2.0, 3.0)
-            v1_norm = vector3d.normalized_vec(v1)
+    def test_orthogonal_basis_construction(self):
+        """Test construction of orthogonal basis from arbitrary vector."""
+        # Start with arbitrary vector
+        v1 = vector3d.Vector3d(1.0, 2.0, 3.0)
+        v1_norm = vector3d.normalized_vec(v1)
 
-            # Create second vector not parallel to first
-            temp = vector3d.Vector3d(0.0, 1.0, 0.0)
-            if abs(vector3d.dot(v1_norm, temp)) > 0.9:  # Nearly parallel
-                temp = vector3d.Vector3d(1.0, 0.0, 0.0)
+        # Create second vector not parallel to first
+        temp = vector3d.Vector3d(0.0, 1.0, 0.0)
+        if abs(vector3d.dot(v1_norm, temp)) > 0.9:  # Nearly parallel
+            temp = vector3d.Vector3d(1.0, 0.0, 0.0)
 
-            # Create orthogonal basis
-            v2 = vector3d.perpendicular_vec(temp, v1_norm)
-            v2_norm = vector3d.normalized_vec(v2)
+        # Create orthogonal basis
+        v2 = vector3d.perpendicular_vec(temp, v1_norm)
+        v2_norm = vector3d.normalized_vec(v2)
 
-            v3 = vector3d.cross_product_vec(v1_norm, v2_norm)
-            v3_norm = vector3d.normalized_vec(v3)
+        v3 = vector3d.cross_product_vec(v1_norm, v2_norm)
+        v3_norm = vector3d.normalized_vec(v3)
 
-            # Test orthogonality
-            self.assertAlmostEqual(vector3d.dot(v1_norm, v2_norm), 0.0, places=6)
-            self.assertAlmostEqual(vector3d.dot(v1_norm, v3_norm), 0.0, places=6)
-            self.assertAlmostEqual(vector3d.dot(v2_norm, v3_norm), 0.0, places=6)
+        # Test orthogonality
+        self.assertAlmostEqual(vector3d.dot(v1_norm, v2_norm), 0.0, places=6)
+        self.assertAlmostEqual(vector3d.dot(v1_norm, v3_norm), 0.0, places=6)
+        self.assertAlmostEqual(vector3d.dot(v2_norm, v3_norm), 0.0, places=6)
 
-            # Test unit length
-            self.assertAlmostEqual(vector3d.vec_length(v1_norm), 1.0, places=6)
-            self.assertAlmostEqual(vector3d.vec_length(v2_norm), 1.0, places=6)
-            self.assertAlmostEqual(vector3d.vec_length(v3_norm), 1.0, places=6)
+        # Test unit length
+        self.assertAlmostEqual(vector3d.vec_length(v1_norm), 1.0, places=6)
+        self.assertAlmostEqual(vector3d.vec_length(v2_norm), 1.0, places=6)
+        self.assertAlmostEqual(vector3d.vec_length(v3_norm), 1.0, places=6)
 
-        def test_triangle_properties(self):
-            """Test geometric properties of triangles using vector operations."""
-            # Define triangle vertices
-            a = vector3d.Vector3d(0.0, 0.0, 0.0)
-            b = vector3d.Vector3d(3.0, 0.0, 0.0)
-            c = vector3d.Vector3d(0.0, 4.0, 0.0)
+    def test_triangle_properties(self):
+        """Test geometric properties of triangles using vector operations."""
+        # Define triangle vertices
+        a = vector3d.Vector3d(0.0, 0.0, 0.0)
+        b = vector3d.Vector3d(3.0, 0.0, 0.0)
+        c = vector3d.Vector3d(0.0, 4.0, 0.0)
 
-            # Calculate side lengths using vectors
-            ab = b - a
-            bc = c - b
-            ca = a - c
+        # Calculate side lengths using vectors
+        ab = b - a
+        bc = c - b
+        ca = a - c
 
-            side_a = vector3d.vec_length(bc)  # Opposite to vertex a
-            side_b = vector3d.vec_length(ca)  # Opposite to vertex b
-            side_c = vector3d.vec_length(ab)  # Opposite to vertex c
+        side_a = vector3d.vec_length(bc)  # Opposite to vertex a
+        side_b = vector3d.vec_length(ca)  # Opposite to vertex b
+        side_c = vector3d.vec_length(ab)  # Opposite to vertex c
 
-            # This is a 3-4-5 right triangle
-            self.assertAlmostEqual(side_a, 5.0, places=6)
-            self.assertAlmostEqual(side_b, 4.0, places=6)
-            self.assertAlmostEqual(side_c, 3.0, places=6)
+        # This is a 3-4-5 right triangle
+        self.assertAlmostEqual(side_a, 5.0, places=6)
+        self.assertAlmostEqual(side_b, 4.0, places=6)
+        self.assertAlmostEqual(side_c, 3.0, places=6)
 
-            # Test angles
-            angle_at_a = vector3d.pos_angle(b, a, c)
-            angle_at_b = vector3d.pos_angle(a, b, c)
-            angle_at_c = vector3d.pos_angle(a, c, b)
+        # Test angles
+        angle_at_a = vector3d.pos_angle(b, a, c)
+        angle_at_b = vector3d.pos_angle(a, b, c)
+        angle_at_c = vector3d.pos_angle(a, c, b)
 
-            # Sum of angles should be π
-            angle_sum = angle_at_a + angle_at_b + angle_at_c
-            self.assertAlmostEqual(angle_sum, math.pi, places=6)
+        # Sum of angles should be π
+        angle_sum = angle_at_a + angle_at_b + angle_at_c
+        self.assertAlmostEqual(angle_sum, math.pi, places=6)
 
-            # Right angle at origin
-            self.assertAlmostEqual(angle_at_a, math.pi / 2, places=6)
+        # Right angle at origin
+        self.assertAlmostEqual(angle_at_a, math.pi / 2, places=6)
 
-        def test_vector_projection_decomposition(self):
-            """Test vector projection and decomposition."""
-            # Original vector
-            v = vector3d.Vector3d(3.0, 4.0, 5.0)
+    def test_vector_projection_decomposition(self):
+        """Test vector projection and decomposition."""
+        # Original vector
+        v = vector3d.Vector3d(3.0, 4.0, 5.0)
 
-            # Project onto coordinate axes
-            x_axis = vector3d.Vector3d(1.0, 0.0, 0.0)
-            y_axis = vector3d.Vector3d(0.0, 1.0, 0.0)
-            z_axis = vector3d.Vector3d(0.0, 0.0, 1.0)
+        # Project onto coordinate axes
+        x_axis = vector3d.Vector3d(1.0, 0.0, 0.0)
+        y_axis = vector3d.Vector3d(0.0, 1.0, 0.0)
+        z_axis = vector3d.Vector3d(0.0, 0.0, 1.0)
 
-            proj_x = vector3d.parallel_vec(v, x_axis)
-            proj_y = vector3d.parallel_vec(v, y_axis)
-            proj_z = vector3d.parallel_vec(v, z_axis)
+        proj_x = vector3d.parallel_vec(v, x_axis)
+        proj_y = vector3d.parallel_vec(v, y_axis)
+        proj_z = vector3d.parallel_vec(v, z_axis)
 
-            # Projections should sum to original vector
-            reconstructed = proj_x + proj_y + proj_z
+        # Projections should sum to original vector
+        reconstructed = proj_x + proj_y + proj_z
 
-            self.assertAlmostEqual(reconstructed.x, v.x, places=6)
-            self.assertAlmostEqual(reconstructed.y, v.y, places=6)
-            self.assertAlmostEqual(reconstructed.z, v.z, places=6)
+        self.assertAlmostEqual(reconstructed.x, v.x, places=6)
+        self.assertAlmostEqual(reconstructed.y, v.y, places=6)
+        self.assertAlmostEqual(reconstructed.z, v.z, places=6)
 
-        def test_dihedral_angle_calculation(self):
-            """Test dihedral angle calculation in molecular context."""
-            # Define four points representing a dihedral angle
-            # Like in a protein backbone: N-CA-CB-CG
-            p1 = vector3d.Vector3d(0.0, 0.0, 0.0)  # N
-            p2 = vector3d.Vector3d(1.0, 0.0, 0.0)  # CA
-            p3 = vector3d.Vector3d(1.0, 1.0, 0.0)  # CB
-            p4 = vector3d.Vector3d(2.0, 1.0, 0.0)  # CG (trans)
+    def test_dihedral_angle_calculation(self):
+        """Test dihedral angle calculation in molecular context."""
+        # Define four points representing a dihedral angle
+        # Like in a protein backbone: N-CA-CB-CG
+        p1 = vector3d.Vector3d(0.0, 0.0, 0.0)  # N
+        p2 = vector3d.Vector3d(1.0, 0.0, 0.0)  # CA
+        p3 = vector3d.Vector3d(1.0, 1.0, 0.0)  # CB
+        p4 = vector3d.Vector3d(2.0, 1.0, 0.0)  # CG (trans)
 
-            dihedral = vector3d.pos_dihedral(p1, p2, p3, p4)
+        dihedral = vector3d.pos_dihedral(p1, p2, p3, p4)
 
-            # This should be a 180° (π radians) dihedral angle
-            self.assertAlmostEqual(abs(dihedral), math.pi, places=6)
+        # This should be a 180° (π radians) dihedral angle
+        self.assertAlmostEqual(abs(dihedral), math.pi, places=6)
 
-            # Test with cis configuration
-            p4_cis = vector3d.Vector3d(0.0, 1.0, 0.0)
-            dihedral_cis = vector3d.pos_dihedral(p1, p2, p3, p4_cis)
+        # Test with cis configuration
+        p4_cis = vector3d.Vector3d(0.0, 1.0, 0.0)
+        dihedral_cis = vector3d.pos_dihedral(p1, p2, p3, p4_cis)
 
-            # This should be close to 0° dihedral angle
-            self.assertAlmostEqual(abs(dihedral_cis), 0.0, places=6)
+        # This should be close to 0° dihedral angle
+        self.assertAlmostEqual(abs(dihedral_cis), 0.0, places=6)
 
-        def test_coordinate_system_transformation(self):
-            """Test transformation between coordinate systems."""
-            # Define a point in one coordinate system
-            point = vector3d.Vector3d(1.0, 2.0, 3.0)
+    def test_coordinate_system_transformation(self):
+        """Test transformation between coordinate systems."""
+        # Define a point in one coordinate system
+        point = vector3d.Vector3d(1.0, 2.0, 3.0)
 
-            # Identity transformation should leave point unchanged
-            identity = vector3d.Matrix3d()
-            transformed = vector3d.transformed_vec(point, identity)
+        # Identity transformation should leave point unchanged
+        identity = vector3d.Matrix3d()
+        transformed = vector3d.transformed_vec(point, identity)
 
-            self.assertAlmostEqual(transformed.x, point.x, places=6)
-            self.assertAlmostEqual(transformed.y, point.y, places=6)
-            self.assertAlmostEqual(transformed.z, point.z, places=6)
+        self.assertAlmostEqual(transformed.x, point.x, places=6)
+        self.assertAlmostEqual(transformed.y, point.y, places=6)
+        self.assertAlmostEqual(transformed.z, point.z, places=6)
 
-    if __name__ == "__main__":
-        unittest.main()
+if __name__ == "__main__":
+    unittest.main()

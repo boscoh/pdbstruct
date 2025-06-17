@@ -383,8 +383,8 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
 
 
 def make_hollow_spheres(
-    pdb,
-    out_fname="",
+    input_file,
+    output_file="",
     grid_spacing=defaults.grid_spacing,
     interior_probe=defaults.interior_probe,
     is_skip_waters=defaults.is_skip_waters,
@@ -392,7 +392,11 @@ def make_hollow_spheres(
     constraint_file="",
     bfactor_probe=defaults.bfactor_probe,
 ):
-    soup = load_soup(pdb, scrub=True)
+    soup = load_soup(input_file, scrub=True)
+    print(
+        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
+    )
+
     atom_indices = soup.get_atom_indices(skip_waters=is_skip_waters)
     center, extent, constraint_fn, inner_constraint_fn, is_calculate_asa_shell = (
         get_constraint(soup, atom_indices, constraint_file, grid_spacing)
@@ -446,10 +450,10 @@ def make_hollow_spheres(
             pos = atom_proxy.load(i_atom).pos
             atom_proxy.occupancy = 1.0 if inner_constraint_fn(pos) else 0.0
 
-    if not out_fname:
-        out_fname = add_suffix_to_basename(pdb, "-hollow")
-    print("Saving hollow spheres to", out_fname)
-    write_soup(grid_soup, out_fname)
+    if not output_file:
+        output_file = add_suffix_to_basename(input_file, "-hollow")
+    print("Saving hollow spheres to", output_file)
+    write_soup(grid_soup, output_file)
 
 
 def main():

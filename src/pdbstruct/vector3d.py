@@ -300,7 +300,7 @@ def pos_dihedral(p1, p2, p3, p4):
 
 
 def rotated_pos(theta, anchor, center, pos):
-    return rotation(sub_vec(center, anchor), theta, center).transformed_vec(pos)
+    return rotation_at_center(sub_vec(center, anchor), theta, center).transformed_vec(pos)
 
 
 class Matrix3d:
@@ -473,7 +473,7 @@ def translation(p):
     return m
 
 
-def rotation(axis, theta, center):
+def rotation_at_center(axis, theta, center):
     """matrix to rotate around an axis at center"""
     rot = rotation_at_origin(axis, theta)
     trans = translation(sub_vec(center, rot.transformed_vec(center)))

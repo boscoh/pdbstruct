@@ -252,6 +252,10 @@ def calculate_volume_by_chain(
 def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None, skip_waters=False):
     try:
         soup = load_soup(input_file, scrub=True)
+        print(
+            f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
+        )
+
     except Exception as e:
         print(f"Error loading file {input_file}: {e}")
         sys.exit(1)
