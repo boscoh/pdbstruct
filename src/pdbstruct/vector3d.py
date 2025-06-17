@@ -1,5 +1,4 @@
 import math
-import random
 
 RAD2DEG = 180.0 / math.pi
 DEG2RAD = math.pi / 180.0
@@ -26,12 +25,12 @@ class Vector3d:
     Examples:
         >>> v1 = Vector3d(1.0, 2.0, 3.0)
         >>> v2 = Vector3d(4.0, 5.0, 6.0)
-        >>> v3 = v1 + v2
+        >>> v3 = add_vec(v1, v2)
         >>> print(v3)
         ( 5.00, 7.00, 9.00 )
 
-        >>> length = v1.length()
-        >>> normalized = v1.normal_vec()
+        >>> length = vec_length(v1)
+        >>> normalized = normalized_vec(v1)
         >>> dot_product = dot(v1, v2)
 
     Note:
@@ -56,6 +55,17 @@ class Vector3d:
         else:
             raise IndexError("Vector3d index out of range (0-2)")
 
+    def __setitem__(self, index, value):
+        """Allow setting via indexing: v[0] = x, v[1] = y, v[2] = z"""
+        if index == 0:
+            self.x = value
+        elif index == 1:
+            self.y = value
+        elif index == 2:
+            self.z = value
+        else:
+            raise IndexError("Vector3d index out of range (0-2)")
+
     def __len__(self):
         """Return length of vector (always 3 for 3D vector)"""
         return 3
@@ -67,99 +77,172 @@ class Vector3d:
         yield self.z
 
     def __add__(self, rhs):
-        return Vector3d(rhs.x + self.x, rhs.y + self.y, rhs.z + self.z)
+        return add_vec(self, rhs)
 
     def __sub__(self, rhs):
-        return Vector3d(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+        return sub_vec(self, rhs)
 
     def __neg__(self):
-        return Vector3d(-self.x, -self.y, -self.z)
+        return Vector3d(-self[0], -self[1], -self[2])
 
     def __pos__(self):
-        return Vector3d(self.x, self.y, self.z)
+        return self.copy()
 
     def __eq__(self, rhs):
-        return (
-            is_near_zero(self.x - rhs.x)
-            and is_near_zero(self.y - rhs.y)
-            and is_near_zero(self.z - rhs.z)
-        )
+        return is_vec_equal(self, rhs)
 
     def __ne__(self, rhs):
-        return not (self == rhs)
+        return not is_vec_equal(self, rhs)
 
     def __str__(self):
-        return "( %.2f, %.2f, %.2f )" % (self.x, self.y, self.z)
+        return "( %.2f, %.2f, %.2f )" % (self[0], self[1], self[2])
 
     def __repr__(self):
-        return "Vector3d( %f, %f, %f )" % (self.x, self.y, self.z)
+        return "Vector3d( %f, %f, %f )" % (self[0], self[1], self[2])
 
     def set(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+        """Set vector components"""
+        self[0] = x
+        self[1] = y
+        self[2] = z
 
     def copy(self):
-        return Vector3d(self.x, self.y, self.z)
+        return Vector3d(self[0], self[1], self[2])
 
-    def length_sq(self):
-        return self.x * self.x + self.y * self.y + self.z * self.z
-
-    def length(self):
-        return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+    def mag(self):
+        return vec_length(self)
 
     def scale(self, scale):
-        self.x *= scale
-        self.y *= scale
-        self.z *= scale
+        self[0] *= scale
+        self[1] *= scale
+        self[2] *= scale
 
     def normalize(self):
-        self.scale(1.0 / self.length())
-
-    def scaled_vec(self, scale):
-        v = self.copy()
-        v.scale(scale)
-        return v
-
-    def normal_vec(self):
-        return self.scaled_vec(1.0 / self.length())
-
-    def parallel_vec(self, axis):
-        axis_len = axis.length()
-        if is_near_zero(axis_len):
-            result = self
-        else:
-            result = axis.scaled_vec(
-                1.0 * dot(self, axis) / axis.length() / axis.length()
-            )
-        return result
-
-    def perpendicular_vec(self, axis):
-        return self - self.parallel_vec(axis)
+        length = vec_length(self)
+        if not is_near_zero(length):
+            self.scale(1.0 / length)
 
     def transform(self, matrix):
         x = (
-            matrix.elem00 * self.x
-            + matrix.elem10 * self.y
-            + matrix.elem20 * self.z
+            matrix.elem00 * self[0]
+            + matrix.elem10 * self[1]
+            + matrix.elem20 * self[2]
             + matrix.elem30
         )
         y = (
-            matrix.elem01 * self.x
-            + matrix.elem11 * self.y
-            + matrix.elem21 * self.z
+            matrix.elem01 * self[0]
+            + matrix.elem11 * self[1]
+            + matrix.elem21 * self[2]
             + matrix.elem31
         )
         z = (
-            matrix.elem02 * self.x
-            + matrix.elem12 * self.y
-            + matrix.elem22 * self.z
+            matrix.elem02 * self[0]
+            + matrix.elem12 * self[1]
+            + matrix.elem22 * self[2]
             + matrix.elem32
         )
-        self.x, self.y, self.z = x, y, z
+        self[0], self[1], self[2] = x, y, z
 
     def tuple(self):
-        return (self.x, self.y, self.z)
+        return (self[0], self[1], self[2])
+
+
+def add_vec(a, b):
+    """Add two vectors"""
+    return Vector3d(a[0] + b[0], a[1] + b[1], a[2] + b[2])
+
+
+def sub_vec(a, b):
+    """Subtract vector b from vector a"""
+    return Vector3d(a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+
+def is_vec_equal(a, b):
+    """Check if two vectors are equal within tolerance"""
+    return (
+        is_near_zero(math.fabs(a[0] - b[0]))
+        and is_near_zero(math.fabs(a[1] - b[1]))
+        and is_near_zero(math.fabs(a[2] - b[2]))
+    )
+
+
+def vec_length_sq(v):
+    return v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
+
+
+def vec_length(v):
+    return math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+
+
+def pos_distance(p1, p2):
+    return math.sqrt(pos_distance_sq(p1, p2))
+
+
+def pos_distance_sq(p1, p2):
+    x = p1[0] - p2[0]
+    y = p1[1] - p2[1]
+    z = p1[2] - p2[2]
+    return x * x + y * y + z * z
+
+
+def dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def cross_product_vec(a, b):
+    """Calculate cross product of two vectors"""
+    return Vector3d(
+        a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]
+    )
+
+
+def is_vec_parallel(a, b, tolerance=SMALL) -> bool:
+    """
+    Test if two vectors are parallel (or anti-parallel).
+    """
+    if vec_length(a) < tolerance or vec_length(b) < tolerance:
+        return True
+    cross = cross_product_vec(a, b)
+    return vec_length(cross) < tolerance
+
+
+def scaled_vec(v, scale):
+    """Return scaled copy of vector"""
+    result = v.copy()
+    result.scale(scale)
+    return result
+
+
+def normalized_vec(v):
+    """Return normalized copy of vector"""
+    length = vec_length(v)
+    if is_near_zero(length):
+        return Vector3d(0.0, 0.0, 0.0)
+    return scaled_vec(v, 1.0 / length)
+
+
+def parallel_vec(v, axis):
+    """Return component of vector parallel to axis"""
+    axis_len = vec_length(axis)
+    if is_near_zero(axis_len):
+        return v.copy()
+    else:
+        dot_product = dot(v, axis)
+        axis_len_sq = axis_len * axis_len
+        return scaled_vec(axis, dot_product / axis_len_sq)
+
+
+def perpendicular_vec(v, axis):
+    """Return component of vector perpendicular to axis"""
+    parallel = parallel_vec(v, axis)
+    return sub_vec(v, parallel)
+
+
+def transformed_vec(v, matrix):
+    """Return transformed copy of vector"""
+    result = v.copy()
+    result.transform(matrix)
+    return result
 
 
 def normalize_angle(angle):
@@ -179,28 +262,9 @@ def angle_diff(angle1, angle2):
     return normalize_angle(norm_angle1 - norm_angle2)
 
 
-def dot(a, b):
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-
-
-def CrossProductVec(a, b):
-    return Vector3d(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
-
-
-def pos_distance(p1, p2):
-    return math.sqrt(pos_distance_sq(p2, p1))
-
-
-def pos_distance_sq(p1, p2):
-    x = p1[0] - p2[0]
-    y = p1[1] - p2[1]
-    z = p1[2] - p2[2]
-    return x * x + y * y + z * z
-
-
 def vec_angle(a, b):
-    a_len = a.length()
-    b_len = b.length()
+    a_len = vec_length(a)
+    b_len = vec_length(b)
 
     if a_len * b_len < 1e-6:
         return 0.0
@@ -216,39 +280,27 @@ def vec_angle(a, b):
 
 
 def pos_angle(p1, p2, p3):
-    return vec_angle(p1 - p2, p3 - p2)
+    return vec_angle(sub_vec(p1, p2), sub_vec(p3, p2))
 
 
 def vec_dihedral(a, axis, c):
-    ap = a.perpendicular_vec(axis)
-    cp = c.perpendicular_vec(axis)
+    ap = perpendicular_vec(a, axis)
+    cp = perpendicular_vec(c, axis)
 
     angle = vec_angle(ap, cp)
 
-    if dot(CrossProductVec(ap, cp), axis) > 0:
+    if dot(cross_product_vec(ap, cp), axis) > 0:
         angle = -angle
 
     return angle
 
 
 def pos_dihedral(p1, p2, p3, p4):
-    return vec_dihedral(p1 - p2, p2 - p3, p4 - p3)
+    return vec_dihedral(sub_vec(p1, p2), sub_vec(p2, p3), sub_vec(p4, p3))
 
 
-def RotatedPos(theta, anchor, center, pos):
-    return Rotation(center - anchor, theta, center).transform_vec(pos)
-
-
-#
-# def ProjectedPos(length, angle, dihedral, p1, p2, p3):
-#     norm = plane_normal(p1, p2, p3)
-#     axis = p3 - p2
-#
-#     vec_diff = axis.scaled_vec(-length)
-#     vec_diff = RotationAtOrigin(norm, -angle).transform_vec(vec_diff)
-#     vec_diff = RotationAtOrigin(axis, dihedral).transform_vec(vec_diff)
-#
-#     return p3 + vec_diff
+def rotated_pos(theta, anchor, center, pos):
+    return rotation(sub_vec(center, anchor), theta, center).transformed_vec(pos)
 
 
 class Matrix3d:
@@ -379,17 +431,17 @@ class Matrix3d:
             c.set_elem(3, i, val)
         return c
 
-    def transform_vec(self, v):
+    def transformed_vec(self, v):
         # v'[i] = sum(over j) M[j][i] v[j]
-        x = self.elem00 * v.x + self.elem10 * v.y + self.elem20 * v.z + self.elem30
-        y = self.elem01 * v.x + self.elem11 * v.y + self.elem21 * v.z + self.elem31
-        z = self.elem02 * v.x + self.elem12 * v.y + self.elem22 * v.z + self.elem32
+        x = self.elem00 * v[0] + self.elem10 * v[1] + self.elem20 * v[2] + self.elem30
+        y = self.elem01 * v[0] + self.elem11 * v[1] + self.elem21 * v[2] + self.elem31
+        z = self.elem02 * v[0] + self.elem12 * v[1] + self.elem22 * v[2] + self.elem32
         return Vector3d(x, y, z)
 
 
-def RotationAtOrigin(axis, theta):
+def rotation_at_origin(axis, theta):
     """matrix to rotate a vector at origin"""
-    v = axis.normal_vec()
+    v = normalized_vec(axis)
 
     c = math.cos(float(theta))
     s = math.sin(float(theta))
@@ -397,22 +449,22 @@ def RotationAtOrigin(axis, theta):
 
     m = Matrix3d()
 
-    m.elem00 = t * v.x * v.x + c
-    m.elem01 = t * v.x * v.y + v.z * s
-    m.elem02 = t * v.x * v.z - v.y * s
+    m.elem00 = t * v[0] * v[0] + c
+    m.elem01 = t * v[0] * v[1] + v[2] * s
+    m.elem02 = t * v[0] * v[2] - v[1] * s
 
-    m.elem10 = t * v.y * v.x - v.z * s
-    m.elem11 = t * v.y * v.y + c
-    m.elem12 = t * v.y * v.z + v.x * s
+    m.elem10 = t * v[1] * v[0] - v[2] * s
+    m.elem11 = t * v[1] * v[1] + c
+    m.elem12 = t * v[1] * v[2] + v[0] * s
 
-    m.elem20 = t * v.z * v.x + v.y * s
-    m.elem21 = t * v.z * v.y - v.x * s
-    m.elem22 = t * v.z * v.z + c
+    m.elem20 = t * v[2] * v[0] + v[1] * s
+    m.elem21 = t * v[2] * v[1] - v[0] * s
+    m.elem22 = t * v[2] * v[2] + c
 
     return m
 
 
-def Translation(p):
+def translation(p):
     """matrix to translate a vector"""
     m = Matrix3d()
     m.elem30 = p[0]
@@ -421,57 +473,40 @@ def Translation(p):
     return m
 
 
-def Rotation(axis, theta, center):
+def rotation(axis, theta, center):
     """matrix to rotate around an axis at center"""
-    rot = RotationAtOrigin(axis, theta)
-    trans = Translation(center - rot.transform_vec(center))
+    rot = rotation_at_origin(axis, theta)
+    trans = translation(sub_vec(center, rot.transformed_vec(center)))
     return trans * rot
 
 
-def Superposition3(ref1, ref2, ref3, mov1, mov2, mov3):
-    mov_diff = mov2 - mov1
-    ref_diff = ref2 - ref1
+def superposition(ref1, ref2, ref3, mov1, mov2, mov3):
+    mov_diff = sub_vec(mov2, mov1)
+    ref_diff = sub_vec(ref2, ref1)
 
-    m1 = Matrix3d()
+    m1: Matrix3d
     if math.fabs(vec_angle(mov_diff, ref_diff)) < SMALL:
-        m1 = Translation(ref1 - mov1)
+        m1 = translation(sub_vec(ref1, mov1))
     else:
-        axis = CrossProductVec(mov_diff, ref_diff)
+        axis = cross_product_vec(mov_diff, ref_diff)
         torsion = vec_dihedral(ref_diff, axis, mov_diff)
-        rot = RotationAtOrigin(axis, torsion)
-        trans = Translation(ref2 - rot.transform_vec(mov2))
+        rot = rotation_at_origin(axis, torsion)
+        trans = translation(sub_vec(ref2, rot.transformed_vec(mov2)))
         m1 = trans * rot
 
-    mov_diff = ref2 - m1.transform_vec(mov3)
-    ref_diff = ref2 - ref3
+    mov_diff = sub_vec(ref2, m1.transformed_vec(mov3))
+    ref_diff = sub_vec(ref2, ref3)
 
-    m = Matrix3d()
+    m: Matrix3d
     if math.fabs(vec_angle(mov_diff, ref_diff)) < SMALL:
         m = m1
     else:
-        axis = ref2 - ref1
+        axis = sub_vec(ref2, ref1)
         torsion = vec_dihedral(ref_diff, axis, mov_diff)
-        m2 = RotationAtOrigin(axis, torsion)
-        m3 = Translation(ref2 - m2.transform_vec(ref2))
+        m2 = rotation_at_origin(axis, torsion)
+        m3 = translation(sub_vec(ref2, m2.transformed_vec(ref2)))
         m = m3 * m2 * m1
 
     return m
 
 
-def RandomVec():
-    return Vector3d(
-        random.uniform(-100, 100), random.uniform(-100, 100), random.uniform(-100, 100)
-    )
-
-
-def RandomOriginRotation():
-    axis = RandomVec()
-    angle = random.uniform(-math.pi / 2.0, math.pi / 2.0)
-    return RotationAtOrigin(axis, angle)
-
-
-def RandomTransform():
-    axis = RandomVec()
-    angle = random.uniform(-math.pi / 2.0, math.pi / 2.0)
-    center = RandomVec()
-    return Rotation(axis, angle, center)

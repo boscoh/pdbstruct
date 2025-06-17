@@ -294,7 +294,7 @@ def get_cylinder_constraint_fn(center1, center2, radius):
         if vector3d.dot(pos1, axis12) < 0:
             return False
         pos1_perp = pos1.perpendicular_vec(axis12)
-        if pos1_perp.length() > radius:
+        if pos1_perp.mag() > radius:
             return False
         pos2 = pos - center2
         if vector3d.dot(pos2, axis12) > 0:
@@ -340,11 +340,11 @@ def get_constraint(soup, atom_indices, constraint_file, grid_spacing):
             )
             axis12 = atom_proxy2.pos - atom_proxy1.pos
 
-            offset1 = -axis12.normal_vec()
+            offset1 = -axis12.normalized_vec()
             offset1.scale(constraints.axis_offset1)
             center1 = atom_proxy1.pos + offset1
 
-            offset2 = axis12.normal_vec()
+            offset2 = axis12.normalized_vec()
             offset2.scale(constraints.axis_offset2)
             center2 = atom_proxy2.pos + offset2
 
@@ -358,8 +358,8 @@ def get_constraint(soup, atom_indices, constraint_file, grid_spacing):
                 half_length * half_length + constraints.radius * constraints.radius
             )
             border_length = 3.0 * grid_spacing
-            center1 = center1 + axis12.normal_vec().scaled_vec(border_length)
-            center2 = center2 - axis12.normal_vec().scaled_vec(border_length)
+            center1 = center1 + axis12.normalized_vec().scaled_vec(border_length)
+            center2 = center2 - axis12.normalized_vec().scaled_vec(border_length)
             radius = radius - border_length
             inner_constraint_fn = get_cylinder_constraint_fn(center1, center2, radius)
 

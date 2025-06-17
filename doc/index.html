@@ -130,19 +130,18 @@
         <h2>quick start</h2>
 
         <p>
-            HOLLOW is a portable command-line utility written in
+            HOLLOW is a command-line utility in
             <a
                     href="http://python.org/download/"
             >Python 3</a
-            > (<a href="https://github.com/boscoh/hollow">github/boscoh/hollow</a>).
+            >. Install using the standard package manager:
         </p>
-        <p>Install using the standard python package manager:</p>
 
-        <code>>> pip install pdbstruct</code>
+        <code>>>> pip install -g pdbstruct</code>
 
-        <p>Then run the command</p>
+        <p>Then run the command to get some help</p>
 
-        <code>>> hollow</code>
+        <code>>>> hollow</code>
 
 
         <p>The input is a PDB or mmCIF file.</p>
@@ -170,8 +169,13 @@
         </p>
 
         <h2>change-log</h2>
+        <p>Source code is at (<a href="https://github.com/boscoh/hollow">github/boscoh/hollow</a>).</p>
+
         <ul>
-            <li>Version 2.0 (Jun 2025). Python 3. Pypi. mmCif</li>
+            <li>Version 2.0 (Jun 2025). Python 3. pypi. mmCif. Memory effient
+                representation of protein. Spatial hashing to speed pair-wise search.
+                Removed idle functions.
+            </li>
             <li>Version 1.3 (May 2020). Python 3/2 compatible.</li>
             <li>
                 Version 1.2 (Aug 2011). Changed exceptions to work with
