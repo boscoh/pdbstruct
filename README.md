@@ -1,7 +1,7 @@
 
 
 
-  # pdbstruct 1.0 
+  # pdbstruct
 
 `pdbstruct` provides a set of tools for fast protein analysis in python. Current tools:
 
