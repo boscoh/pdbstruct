@@ -239,7 +239,6 @@ def hollow(
             constraint_file or "",
             bfactor_probe,
         )
-        click.echo(f"Hollow spheres written to {output_file}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)

@@ -288,6 +288,8 @@ class CifParser:
             if i >= len(tokens):
                 return default
             if fn:
+                if tokens[i] in [".", "?"]:
+                    return default
                 return fn(tokens[i])
             return tokens[i]
 
@@ -309,7 +311,7 @@ class CifParser:
                     x = get_token("Cartn_x", 0.0, float)
                     y = get_token("Cartn_y", 0.0, float)
                     z = get_token("Cartn_z", 0.0, float)
-                    occupancy = get_token("Cartn_z", 1.0, float)
+                    occupancy = get_token("occupancy", 1.0, float)
                     bfactor = get_token("B_iso_or_equiv", 0.0, float)
 
                     label_seq_id = get_token("label_seq_id", 0, int)
@@ -638,8 +640,15 @@ def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] =
 
             # Format atom record
             atom_id = i_atom + 1
-            alt_id = atom_proxy.alt if atom_proxy.alt else "."
-            ins_code = residue_proxy.ins_code if residue_proxy.ins_code else "?"
+            alt_id = atom_proxy.alt
+            if not alt_id.strip():
+                alt_id = "."
+            ins_code = residue_proxy.ins_code
+            if not ins_code.strip():
+                ins_code = "?"
+            chain = residue_proxy.chain
+            if not chain.strip():
+                chain = "?"
 
             # Write the atom line
             f.write(f"{group_pdb:<6} ")
@@ -648,7 +657,7 @@ def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] =
             f.write(f"{atom_proxy.atom_type:<4} ")
             f.write(f"{alt_id:<1} ")
             f.write(f"{residue_proxy.res_type:<3} ")
-            f.write(f"{residue_proxy.chain:<1} ")
+            f.write(f"{chain:<1} ")
             f.write(f"{entity_id:<1} ")
             f.write(f"{residue_proxy.res_num:<4} ")
             f.write(f"{ins_code:<1} ")

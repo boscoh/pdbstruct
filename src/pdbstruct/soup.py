@@ -378,8 +378,7 @@ class Soup:
         self.i_structure = self.structure_ids.index(structure_id)
 
         if title:
-            id_upper = self.structure_id.upper()
-            self.title = f"""[<a href="http://www.rcsb.org/structure/{id_upper}">{id_upper}</a>]{title}"""
+            self.title = title
 
     def calc_atom_configuration(self):
         self.max_length = self.calc_max_length()

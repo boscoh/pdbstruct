@@ -103,7 +103,7 @@ class HollowGrid:
             self.set_drilled(a, b, c, True)
 
     def exclude_edge_to_interior(self):
-        for i in range(self.n):
+        for i in tqdm.trange(self.n):
             for j in range(self.n):
                 self.drill_in_dim(True, i, j, 0)
                 self.drill_in_dim(False, i, j, 0)
@@ -452,7 +452,7 @@ def make_hollow_spheres(
 
     if not output_file:
         output_file = add_suffix_to_basename(input_file, "-hollow")
-    print("Saving hollow spheres to", output_file)
+    print("Hollow spheres written to", output_file)
     write_soup(grid_soup, output_file)
 
 
