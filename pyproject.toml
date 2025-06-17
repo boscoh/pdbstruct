@@ -1,7 +1,7 @@
 [project]
 name = "pdbstruct"
 version = "0.1"
-description = "python software to display protein channels"
+description = "Tools for analyzing protein structures"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,6 +9,14 @@ dependencies = [
     "click>=8.2.1",
     "tqdm>=4.67.1",
 ]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+
+[project.urls]
+Homepage = "https://github.com/boscoh/pdbstruct"
 
 [project.scripts]
 hollow = "pdbstruct.hollow:main"
