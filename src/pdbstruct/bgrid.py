@@ -3,9 +3,9 @@ import array
 
 class BoolGrid:
     """
-    BooleanGrid - A memory-efficient 3D boolean grid using Python's array module.
+    BoolGrid - A memory-efficient 3D boolean grid using Python's array module.
 
-    BooleanGrid provides a compact representation of a 3D boolean grid by using
+    BoolGrid provides a compact representation of a 3D boolean grid by using
     array.array with unsigned char storage. Each grid point stores a boolean
     state (occupied/unoccupied) using only 1 byte per point, making it suitable
     for large 3D grids used in molecular modeling, voxel operations, and spatial
@@ -19,7 +19,7 @@ class BoolGrid:
     1. Creating a 3D grid for molecular volume calculations:
         ```python
         # Create a 100x100x100 grid
-        grid = BooleanGrid(100)
+        grid = BoolGrid(100)
 
         # Mark some points as occupied
         grid.set(50, 50, 50, True)   # Center point
@@ -33,7 +33,7 @@ class BoolGrid:
     2. Using for collision detection or space partitioning:
         ```python
         # Create grid for spatial partitioning
-        grid = BooleanGrid(64)
+        grid = BoolGrid(64)
 
         # Mark occupied regions
         for x in range(10, 20):
@@ -53,7 +53,7 @@ class BoolGrid:
 
     3. Resetting and reusing the grid:
         ```python
-        grid = BooleanGrid(50)
+        grid = BoolGrid(50)
 
         # Use grid for first calculation
         grid.set(10, 10, 10, True)
@@ -73,7 +73,7 @@ class BoolGrid:
         width = 50.0   # Angstroms
         n = int(width / spacing)  # 100 grid points
 
-        grid = BooleanGrid(n)
+        grid = BoolGrid(n)
 
         # Mark grid points occupied by atoms
         for atom in protein_atoms:

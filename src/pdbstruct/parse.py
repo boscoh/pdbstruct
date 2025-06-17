@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List
+from typing import Iterable, List, Optional
 
 from .soup import Soup
 
@@ -88,25 +88,24 @@ def strip_alternative_atoms(pdb_txt):
 
 
 class PdbParser:
-    def __init__(self, soup: Soup):
+    def __init__(self, soup: Soup, scrub: bool = False, skip_water: bool=False) -> None:
         self.soup: Soup = soup
+        self.scrub = scrub
+        self.skip_water = skip_water
         self.has_secondary_structure = False
         self.error = ""
 
     def is_atom_line(self, line: str) -> bool:
-        """Check if line is an ATOM or HETATM line."""
         return line.startswith("ATOM") or line.startswith("HETATM")
 
     def is_nmr(self, lines: List[str]) -> bool:
-        """Check if the structure is from NMR experiment."""
         for line in lines:
             if line.startswith("EXPDTA"):
                 if "NMR" in line:
                     return True
         return False
 
-    def parse_atom_lines(self, pdb_lines: List[str]) -> None:
-        """Parse ATOM and HETATM lines from PDB format."""
+    def parse_atom_lines(self, pdb_lines: List[str], model: int) -> None:
         self.soup.count_res_added = 0
 
         for i_line, line in enumerate(pdb_lines):
@@ -132,23 +131,33 @@ class PdbParser:
                 if elem == "":
                     elem = delete_numbers(atom_type.strip())[:1]
 
+                if self.scrub:
+                    if alt not in ["", " ", "A", "a"]:
+                        continue
+                    if model > 1:
+                        continue
+
+                if self.skip_water:
+                    if res_type == "HOH":
+                        continue
+
                 self.soup.add_atom(
-                    x,
-                    y,
-                    z,
-                    bfactor,
-                    alt,
-                    atom_type,
-                    elem,
-                    res_type,
-                    res_num,
-                    ins_code,
-                    chain,
-                    occupancy,
+                    x=x,
+                    y=y,
+                    z=z,
+                    bfactor=bfactor,
+                    alt=alt,
+                    atom_type=atom_type,
+                    elem=elem,
+                    res_type=res_type,
+                    res_num=res_num,
+                    ins_code=ins_code,
+                    chain=chain,
+                    occupancy=occupancy,
+                    model=model,
                 )
 
     def parse_secondary_structure_lines(self, pdb_lines: List[str]) -> None:
-        """Parse HELIX and SHEET records for secondary structure."""
         self.soup.assign_residue_properties(self.soup.i_structure)
         residue = self.soup.get_residue_proxy()
 
@@ -190,16 +199,14 @@ class PdbParser:
                         residue.i_res = residue.i_res + 1
 
     def parse_title(self, lines: List[str]) -> str:
-        """Extract title from TITLE records."""
         result = ""
         for line in lines:
             if line[:5] == "TITLE":
                 result += line[10:]
         return result
 
-    def parse_pdb_data(self, pdb_text: str, pdb_id: str) -> None:
-        """Parse complete PDB data."""
-        lines = pdb_text.split("\n")
+    def parse_text(self, text: str, pdb_id: str) -> None:
+        lines = text.split("\n")
         # Handle both \n and \r\n line endings
         lines = [line.rstrip("\r") for line in lines]
 
@@ -210,24 +217,24 @@ class PdbParser:
         title = self.parse_title(lines)
         is_nmr = self.is_nmr(lines)
 
-        models = [[]]
+        lines_list = [[]]
         i_model = 0
 
         for line in lines:
             if self.is_atom_line(line):
-                models[i_model].append(line)
+                lines_list[i_model].append(line)
             elif line.startswith("END"):
                 if is_nmr:
                     break
-                models.append([])
+                lines_list.append([])
                 i_model += 1
 
         # Remove empty models at the end
-        while i_model >= 0 and len(models[i_model]) == 0:
-            models.pop()
+        while i_model >= 0 and len(lines_list[i_model]) == 0:
+            lines_list.pop()
             i_model -= 1
 
-        n_model = len(models)
+        n_model = len(lines_list)
         for i_model in range(n_model):
             structure_id = pdb_id
             if n_model > 1:
@@ -240,18 +247,21 @@ class PdbParser:
                 i_clash += 1
 
             self.soup.push_structure_id(structure_id, title)
-            self.parse_atom_lines(models[i_model])
+            model_num = i_model + 1
+            lines = lines_list[i_model]
+            self.parse_atom_lines(lines, model_num)
             self.parse_secondary_structure_lines(lines)
 
 
 class CifParser:
-    def __init__(self, soup: Soup):
+    def __init__(self, soup: Soup, scrub: bool = False, skip_water: bool = False):
         self.soup: Soup = soup
+        self.scrub = scrub
+        self.skip_water = skip_water
         self.has_secondary_structure = False
         self.error = ""
 
     def is_atom_line(self, line: str) -> bool:
-        """Check if line is an ATOM or HETATM line."""
         return line.startswith("ATOM") or line.startswith("HETATM")
 
     def parse_atom_lines(self, pdb_lines: List[str]) -> None:
@@ -276,9 +286,9 @@ class CifParser:
                     z = float(tokens[12])
                     occupancy = float(tokens[13])
                     bfactor = float(tokens[14])
-                    token = tokens[8]
 
-                    if token == ".":
+                    # res_num
+                    if tokens[8] == ".":
                         is_same_chain_and_entity = (
                             chain == last_chain and entity == last_entity
                         )
@@ -296,6 +306,8 @@ class CifParser:
                         last_entity = entity
                         next_res_num = res_num + 1
 
+                    model = int(tokens[20])
+
                 except (ValueError, IndexError) as e:
                     self.error = f"line {i_line}"
                     print(f'parse_atom_lines {e}: "{line}"')
@@ -304,31 +316,39 @@ class CifParser:
                 if elem == "":
                     elem = delete_numbers(atom_type.strip())[:1]
 
+                if self.scrub:
+                    if alt not in ["", " ", "A", "a"]:
+                        continue
+                    if model > 1:
+                        continue
+
+                if self.skip_water:
+                    if res_type == "HOH":
+                        continue
+
                 self.soup.add_atom(
-                    x,
-                    y,
-                    z,
-                    bfactor,
-                    alt,
-                    atom_type,
-                    elem,
-                    res_type,
-                    res_num,
-                    ins_code,
-                    chain,
-                    occupancy,
+                    x=x,
+                    y=y,
+                    z=z,
+                    bfactor=bfactor,
+                    alt=alt,
+                    atom_type=atom_type,
+                    elem=elem,
+                    res_type=res_type,
+                    res_num=res_num,
+                    ins_code=ins_code,
+                    chain=chain,
+                    occupancy=occupancy,
+                    model=model,
                 )
 
     def parse_secondary_structure_lines(self, pdb_lines: List[str]) -> None:
-        """Parse secondary structure from CIF format."""
         self.has_secondary_structure = False
         self.soup.assign_residue_properties(self.soup.i_structure)
         self.parse_helix_lines(pdb_lines)
         self.parse_sheet_lines(pdb_lines)
 
     def parse_helix_lines(self, pdb_lines: List[str]) -> None:
-        """Parse helix information from CIF format."""
-        print("CifParser.parse_helix_lines")
         residue = self.soup.get_residue_proxy()
         is_helix_loop = False
 
@@ -357,8 +377,6 @@ class CifParser:
                         residue.i_res = residue.i_res + 1
 
     def parse_sheet_lines(self, pdb_lines: List[str]) -> None:
-        """Parse sheet information from CIF format."""
-        print("CifParser.parse_sheet_lines")
         residue = self.soup.get_residue_proxy()
         is_sheet_loop = False
 
@@ -387,7 +405,6 @@ class CifParser:
                         residue.i_res = residue.i_res + 1
 
     def parse_title(self, lines: List[str]) -> str:
-        """Extract title from CIF format."""
         for i, line in enumerate(lines):
             if line.startswith("_struct.title"):
                 rest = line.replace("_struct.title", "").strip()
@@ -399,10 +416,8 @@ class CifParser:
                     return remove_quotes(line.strip())
         return ""
 
-    def parse_pdb_data(self, pdb_text: str, pdb_id: str) -> None:
-        """Parse complete CIF data."""
-        lines = pdb_text.split("\n")
-        # Handle both \n and \r\n line endings
+    def parse_text(self, text: str, pdb_id: str) -> None:
+        lines = text.split("\n")
         lines = [line.rstrip("\r") for line in lines]
 
         if len(lines) == 0:
@@ -414,15 +429,18 @@ class CifParser:
         self.parse_secondary_structure_lines(lines)
 
 
-def load_soup(filename: str, scrub=False) -> Soup:
+def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
     """Load structure from PDB or CIF file."""
     soup = Soup()
 
     # Determine file type and parse accordingly
-    if filename.lower().endswith(".cif"):
-        parser = CifParser(soup)
+    ext = os.path.splitext(filename)[1].lower()
+    if ext in [".cif", ".mmcif"]:
+        parser = CifParser(soup, scrub, skip_water)
+    elif ext in [".pdb", ".pdbx"]:
+        parser = PdbParser(soup, scrub, skip_water)
     else:
-        parser = PdbParser(soup)
+        raise ValueError(f"Unknown file type: {ext}")
 
     # Read file content
     try:
@@ -433,14 +451,7 @@ def load_soup(filename: str, scrub=False) -> Soup:
 
     pdb_id = os.path.splitext(os.path.basename(filename))[0]
 
-    if scrub:
-        content = strip_other_nmr_models(content)
-        content = strip_lines(content, lambda l: l.startswith("ANISOU"))
-        content = strip_lines(content, lambda l: l.startswith("CONECT"))
-        content = strip_lines(content, lambda l: l.startswith("MASTER"))
-        content = strip_alternative_atoms(content)
-
-    parser.parse_pdb_data(content, pdb_id)
+    parser.parse_text(content, pdb_id)
 
     if parser.error:
         print(f"Warning: Parser error - {parser.error}")
@@ -452,7 +463,44 @@ def load_soup(filename: str, scrub=False) -> Soup:
     return soup
 
 
-def write_pdb(soup: Soup, filename: str):
+def add_suffix_to_basename(filename: str, suffix: str) -> str:
+    """
+    Add a suffix to the basename of a filename while preserving directory and extension.
+
+    Args:
+        filename: Input filename (can include path)
+        suffix: Suffix to add to basename (e.g., "-extra")
+
+    Returns:
+        Modified filename with suffix added to basename
+
+    Examples:
+        add_suffix_to_basename("protein.pdb", "-extra") -> "protein-extra.pdb"
+        add_suffix_to_basename("/path/to/protein.pdb", "-extra") -> "/path/to/protein-extra.pdb"
+        add_suffix_to_basename("protein", "-extra") -> "protein-extra"
+    """
+    import os
+
+    # Split into directory, basename, and extension
+    dir_path = os.path.dirname(filename)
+    base_name = os.path.basename(filename)
+
+    # Split basename into name and extension
+    name, ext = os.path.splitext(base_name)
+
+    # Add suffix to name
+    new_name = name + suffix
+
+    # Reconstruct the full path
+    new_basename = new_name + ext
+
+    if dir_path:
+        return os.path.join(dir_path, new_basename)
+    else:
+        return new_basename
+
+
+def write_pdb(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None) -> None:
     atom_proxy = soup.get_atom_proxy()
     residue_proxy = soup.get_residue_proxy()
 
@@ -460,7 +508,7 @@ def write_pdb(soup: Soup, filename: str):
         if soup.title:
             f.write(f"TITLE     {soup.title}\n")
 
-        for i_atom in range(soup.get_atom_count()):
+        for i_atom in soup.get_atom_indices(atom_indices):
             atom_proxy.load(i_atom)
             residue_proxy.load(atom_proxy.i_res)
 
@@ -483,3 +531,137 @@ def write_pdb(soup: Soup, filename: str):
             f.write(line)
 
         f.write("END\n")
+
+
+def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):
+    """Write structure data to CIF format file."""
+    atom_proxy = soup.get_atom_proxy()
+    residue_proxy = soup.get_residue_proxy()
+
+    with open(filename, "w") as f:
+        # Write header information
+        f.write("data_structure\n")
+        f.write("#\n")
+
+        if soup.title:
+            f.write(f"_struct.title '{soup.title}'\n")
+        f.write("#\n")
+
+        # Write atom site loop header
+        f.write("loop_\n")
+        f.write("_atom_site.group_PDB\n")
+        f.write("_atom_site.id\n")
+        f.write("_atom_site.type_symbol\n")
+        f.write("_atom_site.label_atom_id\n")
+        f.write("_atom_site.label_alt_id\n")
+        f.write("_atom_site.label_comp_id\n")
+        f.write("_atom_site.label_asym_id\n")
+        f.write("_atom_site.label_entity_id\n")
+        f.write("_atom_site.label_seq_id\n")
+        f.write("_atom_site.pdbx_PDB_ins_code\n")
+        f.write("_atom_site.Cartn_x\n")
+        f.write("_atom_site.Cartn_y\n")
+        f.write("_atom_site.Cartn_z\n")
+        f.write("_atom_site.occupancy\n")
+        f.write("_atom_site.B_iso_or_equiv\n")
+        f.write("_atom_site.pdbx_formal_charge\n")
+        f.write("_atom_site.auth_seq_id\n")
+        f.write("_atom_site.auth_comp_id\n")
+        f.write("_atom_site.auth_asym_id\n")
+        f.write("_atom_site.auth_atom_id\n")
+        f.write("_atom_site.pdbx_PDB_model_num\n")
+
+        # Write atom data
+        entity_id = 1
+        current_chain = None
+
+        for i_atom in soup.get_atom_indices(atom_indices):
+            atom_proxy.load(i_atom)
+            residue_proxy.load(atom_proxy.i_res)
+
+            # Determine if this is ATOM or HETATM
+            group_pdb = (
+                "ATOM"
+                if residue_proxy.res_type
+                in [
+                    "ALA",
+                    "ARG",
+                    "ASN",
+                    "ASP",
+                    "CYS",
+                    "GLN",
+                    "GLU",
+                    "GLY",
+                    "HIS",
+                    "ILE",
+                    "LEU",
+                    "LYS",
+                    "MET",
+                    "PHE",
+                    "PRO",
+                    "SER",
+                    "THR",
+                    "TRP",
+                    "TYR",
+                    "VAL",
+                ]
+                else "HETATM"
+            )
+
+            # Update entity_id when chain changes
+            if current_chain != residue_proxy.chain:
+                if current_chain is not None:
+                    entity_id += 1
+                current_chain = residue_proxy.chain
+
+            # Format atom record
+            atom_id = i_atom + 1
+            alt_id = atom_proxy.alt if atom_proxy.alt else "."
+            ins_code = residue_proxy.ins_code if residue_proxy.ins_code else "?"
+
+            # Write the atom line
+            f.write(f"{group_pdb:<6} ")
+            f.write(f"{atom_id:<6} ")
+            f.write(f"{atom_proxy.elem:<2} ")
+            f.write(f"{atom_proxy.atom_type:<4} ")
+            f.write(f"{alt_id:<1} ")
+            f.write(f"{residue_proxy.res_type:<3} ")
+            f.write(f"{residue_proxy.chain:<1} ")
+            f.write(f"{entity_id:<1} ")
+            f.write(f"{residue_proxy.res_num:<4} ")
+            f.write(f"{ins_code:<1} ")
+            f.write(f"{atom_proxy.pos.x:8.3f} ")
+            f.write(f"{atom_proxy.pos.y:8.3f} ")
+            f.write(f"{atom_proxy.pos.z:8.3f} ")
+            f.write(f"{atom_proxy.occupancy:6.2f} ")
+            f.write(f"{atom_proxy.bfactor:6.2f} ")
+            f.write("? ")  # pdbx_formal_charge
+            f.write(f"{residue_proxy.res_num:<4} ")
+            f.write(f"{residue_proxy.res_type:<3} ")
+            f.write(f"{residue_proxy.chain:<1} ")
+            f.write(f"{atom_proxy.atom_type:<4} ")
+            f.write("1")  # pdbx_PDB_model_num
+            f.write("\n")
+
+        f.write("#\n")
+
+
+def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):
+    """
+    Write structure data to file, automatically choosing format based on extension.
+
+    Args:
+        soup: Soup object containing structure data
+        filename: Output filename (extension determines format)
+
+    Raises:
+        ValueError: If file extension is not supported
+    """
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext == ".cif":
+        write_cif(soup, filename, atom_indices)
+    elif ext in [".pdb", ".ent"]:
+        write_pdb(soup, filename, atom_indices)
+    else:
+        raise ValueError(f"Unsupported file extension '{ext}'. Use .pdb, .ent, or .cif")

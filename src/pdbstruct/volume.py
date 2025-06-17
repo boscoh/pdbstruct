@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 import tqdm
 
 from .bgrid import BoolGrid
-from .parse import load_soup, write_pdb
+from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .vector3d import Vector3d
 
@@ -136,8 +136,8 @@ class VolumeGrid(BoolGrid):
 
 def calculate_volume_of_atoms(
     soup: Soup,
+    atom_indices: List[int],
     grid_spacing: float = 0.5,
-    atom_indices: Optional[List[int]] = None,
     out_fname: str = "",
 ) -> Tuple[float, int]:
     """
@@ -146,7 +146,7 @@ def calculate_volume_of_atoms(
     Args:
         soup: Soup object containing atoms
         grid_spacing: Grid spacing in Angstroms (smaller = more accurate but slower)
-        atom_indices: List of atom indices to include (None = all atoms)
+        atom_indices: List of atom indices to include
         out_fname: Output filename for grid visualization (empty = no output)
 
     Returns:
@@ -155,9 +155,6 @@ def calculate_volume_of_atoms(
     if soup.is_empty():
         print("Warning: Soup is empty, volume = 0")
         return 0.0, 0
-
-    if atom_indices is None:
-        atom_indices = list(range(soup.get_atom_count()))
 
     if not atom_indices:
         print("Warning: No atoms selected, volume = 0")
@@ -169,9 +166,7 @@ def calculate_volume_of_atoms(
 
     # Create grid
     grid = VolumeGrid(grid_spacing, extent, center)
-    print(f"Grid {grid.n} x {grid.n} x {grid.n}")
-    print(f"Width {grid.actual_width:.2f} Å")
-    print(f"Spacing: {grid_spacing} Å")
+    print(f"Grid: {grid.n}x{grid.n}x{grid.n}; Width: {grid.actual_width:.2f} Å; Spacing: {grid_spacing} Å")
 
     # Exclude spheres for each atom
     atom_proxy = soup.get_atom_proxy()
@@ -188,7 +183,7 @@ def calculate_volume_of_atoms(
     if out_fname:
         print(f"Writing {out_fname}")
         grid_soup = grid.make_soup("HOH", "O")
-        write_pdb(grid_soup, out_fname)
+        write_soup(grid_soup, out_fname)
 
     return volume, n_excluded
 
@@ -219,7 +214,7 @@ def calculate_volume_by_residue(
         f"chain {residue_proxy.chain} ({len(atom_indices)} atoms)"
     )
 
-    return calculate_volume_of_atoms(soup, grid_spacing, atom_indices, out_fname)
+    return calculate_volume_of_atoms(soup, atom_indices, grid_spacing, out_fname)
 
 
 def calculate_volume_by_chain(
@@ -251,13 +246,12 @@ def calculate_volume_by_chain(
 
     print(f"Calculating volume for chain {chain} ({len(atom_indices)} atoms)")
 
-    return calculate_volume_of_atoms(soup, grid_spacing, atom_indices, out_fname)
+    return calculate_volume_of_atoms(soup, atom_indices, grid_spacing, out_fname)
 
 
-def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None):
-    # Load structure
+def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None, skip_waters=False):
     try:
-        soup = load_soup(input_file)
+        soup = load_soup(input_file, scrub=True)
     except Exception as e:
         print(f"Error loading file {input_file}: {e}")
         sys.exit(1)
@@ -266,10 +260,6 @@ def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None)
         print("Error: No atoms found in input file")
         sys.exit(1)
 
-    # Generate output filename
-    base_name = input_file.replace(".pdb", "").replace(".cif", "")
-
-    # Calculate volume based on arguments
     if target_chain and target_res_num is not None:
         # Find specific residue in chain
         residue_proxy = soup.get_residue_proxy()
@@ -288,22 +278,22 @@ def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None)
             print(f"Error: Residue {target_res_num} not found in chain {target_chain}")
             sys.exit(1)
 
-        out_fname = f"{base_name}_chain{target_chain}_res{target_res_num}_grid.pdb"
+        out_fname = add_suffix_to_basename(input_file, f"-chain{target_chain}-res{target_res_num}-volume")
         volume, n_points = calculate_volume_by_residue(
             soup, target_res_index, spacing, out_fname
         )
 
     elif target_chain:
         # Calculate volume for entire chain
-        out_fname = f"{base_name}_chain{target_chain}_grid.pdb"
+        out_fname = add_suffix_to_basename(input_file, f"-chain{target_chain}-volume")
         volume, n_points = calculate_volume_by_chain(
             soup, target_chain, spacing, out_fname
         )
 
     else:
         # Calculate total volume
-        out_fname = f"{base_name}-volume.pdb"
-        volume, n_points = calculate_volume_of_atoms(soup, spacing, None, out_fname)
+        atom_indices = soup.get_atom_indices(skip_waters=skip_waters)
+        out_fname = add_suffix_to_basename(input_file, "-volume")
+        volume, n_points = calculate_volume_of_atoms(soup, atom_indices, spacing, out_fname)
 
-    print(f"Occupied points: {n_points}")
     print(f"Volume: {volume:.2f} Å³")

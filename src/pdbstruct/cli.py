@@ -14,7 +14,12 @@ from .hollow import make_hollow_spheres
 @click.group()
 @click.version_option()
 def cli():
-    """PDBStruct - Tools for analyzing protein structures."""
+    """
+    PDBStruct - Tools for analyzing protein structures.
+
+    (c) 2025 Bosco Ho & Franz Gruswitz.
+
+    """
     pass
 
 
@@ -36,11 +41,17 @@ def cli():
     type=int,
     help="Calculate volume for specific residue number in chain (requires --chain)",
 )
+@click.option(
+    "--skip-waters",
+    default=False,
+    is_flag=True,
+    help="Skip water molecules in calculation (default: False)",
+)
 def volume(
-    input_file: str, spacing: float, chain: Optional[str], residue: Optional[int]
+    input_file: str, spacing: float, chain: Optional[str], residue: Optional[int], skip_waters: bool
 ):
     """
-    Calculate the volume of atoms in a PDB/CIF file using grid-based method.
+    Calculate the volume of atoms.
 
     The algorithm uses a 3D grid to discretize space and marks grid points
     that fall within atomic spheres as occupied. The volume is calculated
@@ -65,7 +76,7 @@ def volume(
         sys.exit(1)
 
     try:
-        calc_volume(input_file, spacing, chain, residue)
+        calc_volume(input_file, spacing, chain, residue, skip_waters)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -80,9 +91,15 @@ def volume(
     type=int,
     help="Number of points on sphere for calculation (default: 960, more = accurate but slower)",
 )
-def asa(input_file: str, n_sphere: int):
+@click.option(
+    "--skip-waters",
+    default=False,
+    is_flag=True,
+    help="Skip water molecules in calculation (default: False)",
+)
+def asa(input_file: str, n_sphere: int, skip_waters: bool):
     """
-    Calculate the Accessible Surface Area (ASA) of atoms in a PDB/CIF file.
+    Calculate the accessible-surface-area (ASA) of atoms.
 
     Uses the dot density technique with a spherical probe (radius 1.4 Å)
     to calculate the solvent accessible surface area. The algorithm places
@@ -102,7 +119,7 @@ def asa(input_file: str, n_sphere: int):
         sys.exit(1)
 
     try:
-        calc_asa(input_file, n_sphere)
+        calc_asa(input_file, n_sphere, skip_waters)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -111,65 +128,66 @@ def asa(input_file: str, n_sphere: int):
 @cli.command()
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option(
+    "--grid-spacing",
+    "-g",
+    default=0.5,
+    type=float,
+    help="Grid spacing (default: 0.5; 0.2 for final resolution) Å",
+)
+@click.option(
+    "--constraint-file",
+    "-c",
+    type=click.Path(exists=True),
+    help="Config file for grid constraints",
+)
+@click.option(
     "--output",
     "-o",
     type=str,
     help="Output PDB file for hollow spheres (default: auto-generated)",
 )
 @click.option(
-    "--grid-spacing",
-    "-g",
-    default=0.5,
+    "--interior-probe",
+    "-p",
+    default=1.4,
     type=float,
-    help="Grid spacing in Angstroms (default: 0.5)",
+    help="Radius of ball to explore cavities (default: 1.4)",
 )
 @click.option(
     "--surface-probe",
     "-s",
-    default=1.4,
+    default=8.0,
     type=float,
-    help="Radius of surface probe in Angstroms (default: 1.4)",
+    help="Radius of probe to roll over surface used to define depressions (default 8.0) Å",
 )
 @click.option(
-    "--skip-waters/--include-waters",
-    default=True,
-    help="Skip water molecules in calculation (default: skip)",
+    "--include-waters",
+    default=False,
+    help="Include water molecules in calculation (default: false)",
 )
 @click.option(
-    "--interior-probe",
-    "-p",
-    default=1.0,
-    type=float,
-    help="Radius of interior probe in Angstroms (default: 1.0)",
-)
-@click.option(
-    "--constraint-file",
-    "-c",
-    type=click.Path(exists=True),
-    help="Constraint file for grid constraints",
-)
-@click.option(
-    "--min-volume",
-    "-m",
+    "--bfactor-probe",
+    "-b",
     default=0.0,
     type=float,
-    help="Minimum volume threshold (default: 0.0)",
+    help="Radius around a grid point, in which the b-factors of heavy atoms are averaged (default=0.0=off; suggested=4.0 )",
 )
 def hollow(
     input_file: str,
     output: Optional[str],
     grid_spacing: float,
     surface_probe: float,
-    skip_waters: bool,
+    include_waters: bool,
     interior_probe: float,
     constraint_file: Optional[str],
-    min_volume: float,
+    bfactor_probe: float,
 ):
     """
-    Generate hollow spheres to fill voids, pockets, clefts and channels in protein structures.
+    Generate spheres to fill voids, pockets and channels.
 
-    Creates a PDB file with fake atoms that represent the hollow spaces within
-    the protein structure. This is useful for visualizing cavities and binding sites.
+    Creates a PDB file with fake atoms that represent the hollow spaces within the protein
+    structure. This is useful for visualizing the surface area of cavities, channels and
+    binding sites in Pymol and similar viewers.
 
     Examples:
 
@@ -191,8 +209,8 @@ def hollow(
         click.echo("Error: Interior probe radius must be positive", err=True)
         sys.exit(1)
 
-    if min_volume < 0:
-        click.echo("Error: Minimum volume must be non-negative", err=True)
+    if bfactor_probe < 0:
+        click.echo("Error: Bfactor probe radius must be non-negative", err=True)
         sys.exit(1)
 
     # Generate default output filename if not provided
@@ -205,11 +223,11 @@ def hollow(
             input_file,
             output,
             grid_spacing,
-            surface_probe,
-            skip_waters,
             interior_probe,
+            not include_waters,
+            surface_probe,
             constraint_file or "",
-            min_volume,
+            bfactor_probe,
         )
         click.echo(f"Hollow spheres written to {output}")
     except Exception as e:

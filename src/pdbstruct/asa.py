@@ -2,11 +2,11 @@
 
 import math
 import sys
-from typing import List, Tuple
+from typing import List, Optional, Set, Tuple
 
 import tqdm
 
-from .parse import load_soup, write_pdb
+from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash, vertex_diff_sq
 
@@ -70,17 +70,28 @@ def reorder_range(n, i_start):
 
 
 def calculate_asa_from_vertices_and_radii(
-    vertices, radii, probe: float = 1.4, n_sphere_point: int = 960
+    vertices,
+    radii,
+    probe: float = 1.4,
+    n_sphere_point: int = 960,
 ) -> List[float]:
     """
     Returns list of accessible surface areas of the atoms,
     using the probe and atom radius to define the surface.
+
+    Args:
+        vertices: List of vertex coordinates
+        radii: List of atomic radii
+        probe: Probe radius for surface calculation
+        n_sphere_point: Number of sphere points for calculation
     """
     spacehash = SpaceHash(vertices)
     sphere_points = generate_sphere_points(n_sphere_point)
     test_point = [0.0, 0.0, 0.0]
 
-    areas = []
+    # Initialize areas list with zeros for all vertices
+    areas = [0.0] * len(vertices)
+
     for i_vertex in tqdm.trange(len(vertices)):
         neighbor_vertex_indices = spacehash.find_connected_vertex_indices(
             radii, probe, i_vertex
@@ -110,83 +121,176 @@ def calculate_asa_from_vertices_and_radii(
             if is_accessible:
                 n_accessible_point += 1
 
-        const = 4.0 * math.pi / len(sphere_points)
-        area = const * n_accessible_point * radius_i * radius_i
-        areas.append(area)
+        fraction = n_accessible_point / len(sphere_points)
+        areas[i_vertex] = fraction * 4.0 * math.pi * radius_i * radius_i
 
     return areas
 
 
 def calculate_asa_from_soup(
-    soup: Soup, probe: float = 1.4, n_sphere_point: int = 960
+    soup: Soup,
+    probe: float = 1.4,
+    n_sphere_point: int = 960,
+    atom_indices: Optional[List[int]] = None,
 ) -> List[float]:
     """
     Returns list of accessible surface areas of the atoms,
     using the probe and atom radius to define the surface.
+
+    Args:
+        soup: Soup object containing atomic data
+        probe: Probe radius for surface calculation
+        n_sphere_point: Number of sphere points for calculation
+        atom_indices: Set of atom indices to calculate ASA for.
+                              If None, calculates for all atoms.
     """
+    if atom_indices is None:
+        atom_indices = range(soup.get_atom_count())
+
     vertices = []
     radii = []
     atom_proxy = soup.get_atom_proxy()
-    for i_atom in range(soup.get_atom_count()):
+    for i_atom in atom_indices:
         atom_proxy.load(i_atom)
         vertices.append(atom_proxy.pos.tuple())
         radii.append(atom_proxy.radius)
 
-    return calculate_asa_from_vertices_and_radii(vertices, radii, probe, n_sphere_point)
+    return calculate_asa_from_vertices_and_radii(
+        vertices, radii, probe, n_sphere_point
+    )
 
 
-def calculate_residue_asas(soup: Soup, probe: float = 1.4) -> List[float]:
-    """Calculate accessible surface area for each residue."""
-    atom_asas = calculate_asa_from_soup(soup, probe)
-    residue_asas = []
+def calculate_residue_asas(
+    soup: Soup, probe: float = 1.4, selected_residue_indices: Optional[Set[int]] = None
+) -> List[float]:
+    """
+    Calculate accessible surface area for each residue.
 
+    Args:
+        soup: Soup object containing atomic data
+        probe: Probe radius for surface calculation
+        selected_residue_indices: Set of residue indices to calculate ASA for.
+                                 If None, calculates for all residues.
+    """
+    # Get atom indices for selected residues
+    atom_indices = None
+    if selected_residue_indices is not None:
+        atom_indices = set()
+        residue_proxy = soup.get_residue_proxy()
+        for i_res in selected_residue_indices:
+            if 0 <= i_res < soup.get_residue_count():
+                residue_proxy.load(i_res)
+                atom_indices = residue_proxy.get_atom_indices()
+                atom_indices.update(atom_indices)
+
+    selected_asas = calculate_asa_from_soup(soup, probe, atom_indices=atom_indices)
+
+    if atom_indices is None:
+        atom_asas = selected_asas
+    else:
+        atom_asas = [0.0] * soup.get_atom_count()
+        for i_atom, asa in zip(atom_indices, selected_asas):
+            atom_asas[i_atom] = asa
+
+    # Initialize residue ASAs with zeros
+    residue_asas = [0.0] * soup.get_residue_count()
     residue_proxy = soup.get_residue_proxy()
 
-    for i_res in range(soup.get_residue_count()):
+    # Determine which residues to process
+    if selected_residue_indices is None:
+        residue_indices_to_process = range(soup.get_residue_count())
+    else:
+        residue_indices_to_process = [
+            i for i in selected_residue_indices if 0 <= i < soup.get_residue_count()
+        ]
+
+    for i_res in residue_indices_to_process:
         residue_proxy.load(i_res)
         atom_indices = residue_proxy.get_atom_indices()
         residue_asa = sum(atom_asas[i_atom] for i_atom in atom_indices)
-        residue_asas.append(residue_asa)
+        residue_asas[i_res] = residue_asa
 
     return residue_asas
 
 
-def calculate_fraction_buried(soup: Soup) -> List[float]:
-    """Calculate fraction of each residue that is buried."""
-    residue_asas = calculate_residue_asas(soup)
+def calculate_fraction_buried(
+    soup: Soup, selected_residue_indices: Optional[Set[int]] = None
+) -> List[float]:
+    """
+    Calculate fraction of each residue that is buried.
+
+    Args:
+        soup: Soup object containing atomic data
+        selected_residue_indices: Set of residue indices to calculate for.
+                                 If None, calculates for all residues.
+    """
+    residue_asas = calculate_residue_asas(
+        soup, selected_residue_indices=selected_residue_indices
+    )
     residue_proxy = soup.get_residue_proxy()
 
-    fractions = []
-    for i_res in range(soup.get_residue_count()):
+    # Initialize fractions with zeros
+    fractions = [0.0] * soup.get_residue_count()
+
+    # Determine which residues to process
+    if selected_residue_indices is None:
+        residue_indices_to_process = range(soup.get_residue_count())
+    else:
+        residue_indices_to_process = [
+            i for i in selected_residue_indices if 0 <= i < soup.get_residue_count()
+        ]
+
+    for i_res in residue_indices_to_process:
         residue_proxy.load(i_res)
         res_type = residue_proxy.res_type
 
         if res_type in unfolded_ref_asa:
             unfolded_asa = unfolded_ref_asa[res_type]
-            fraction = residue_asas[i_res] / unfolded_asa
+            fraction = residue_asas[i_res] / unfolded_asa if unfolded_asa > 0 else 0.0
         else:
             # If residue type not found, assume fully exposed
             fraction = 1.0
 
-        fractions.append(fraction)
+        fractions[i_res] = fraction
 
     return fractions
 
 
-def calc_asa(input_file, n_sphere):
-    soup = load_soup(input_file)
+def calc_asa(input_file, n_sphere, skip_waters: bool=False):
+    """
+    Calculate ASA for atoms in a PDB file.
+
+    Args:
+        input_file: Path to input PDB file
+        n_sphere: Number of sphere points for calculation
+        selected_atom_indices: Set of atom indices to calculate ASA for.
+                              If None, calculates for all atoms.
+    """
+    soup = load_soup(input_file, scrub=True)
 
     if soup.is_empty():
         print("Error: No atoms found in input file")
         sys.exit(1)
 
+    atom_indices = soup.get_atom_indices(skip_waters=skip_waters)
+
     print("Calculating ASA of atoms")
-    atom_asas = calculate_asa_from_soup(soup, probe=1.4, n_sphere_point=n_sphere)
-    total_asa = sum(atom_asas)
+    selected_atom_asas = calculate_asa_from_soup(
+        soup,
+        probe=1.4,
+        n_sphere_point=n_sphere,
+        atom_indices=atom_indices,
+    )
+
+    # Calculate total ASA only for selected atoms or all atoms
+    total_asa = sum(selected_atom_asas)
+
     print(f"Total ASA: {total_asa:.1f} Å²")
 
-    base_name = input_file.replace(".pdb", "").replace(".cif", "")
-    output_file = f"{base_name}-asa.pdb"
-    soup.set_atom_bfactors(atom_asas)
-    write_pdb(soup, output_file)
+    all_atom_asas = [0.0] * soup.get_atom_count()
+    for i_atom, asa in zip(atom_indices, selected_atom_asas):
+        all_atom_asas[i_atom] = asa
+    soup.set_atom_bfactors(all_atom_asas)
+    output_file = add_suffix_to_basename(input_file, "-asa")
+    write_soup(soup, output_file, atom_indices=atom_indices)
     print(f"Wrote ASA as atom bfactors in {output_file}")

@@ -1,9 +1,9 @@
 
 
 
-# Hollow 1.3 
-### (c) 2021, Bosco Ho and Franz Gruswitz 
+# PDBStruct 1.0 (was Hollow)
 
+### (c) 2021, Bosco Ho and Franz Gruswitz 
 
 
 Hollow generates fake atoms that identifies voids, pockets, channels and depressions in a protein structure specified in the PDB format. 

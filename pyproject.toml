@@ -1,6 +1,6 @@
 [project]
 name = "pdbstruct"
-version = "2.0"
+version = "0.1"
 description = "python software to display protein channels"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -13,5 +13,7 @@ dependencies = [
 hollow = "pdbstruct.hollow:main"
 pdbstruct = "pdbstruct.cli:cli"
 
-[tool.uv]
-package = true
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

@@ -1,5 +1,4 @@
-import unittest
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterable
 
 from .store import Store
 from .vector3d import Vector3d, pos_distance
@@ -96,6 +95,7 @@ ATOM_STORE_FIELDS = [
     ("i_res", "uint32"),
     ("i_chain", "int32"),
     ("radius", "float32"),
+    ("model", "int8"),
 ]
 
 RESIDUE_STORE_FIELDS = [
@@ -192,6 +192,16 @@ class AtomProxy:
     def radius(self) -> float:
         """Get atom radius"""
         return self.soup.atom_store.radius[self.i_atom]
+
+    @property
+    def model(self) -> int:
+        """Get model number"""
+        return self.soup.atom_store.model[self.i_atom]
+
+    @model.setter
+    def model(self, model: int):
+        """Set model number"""
+        self.soup.atom_store.model[self.i_atom] = model
 
 
 class ResidueProxy:
@@ -377,6 +387,7 @@ class Soup:
         ins_code: str,
         chain: str,
         occupancy: float = 1.0,
+        model: int = 1,
     ):
         i_atom = self.atom_store.count
         self.atom_store.increment()
@@ -418,6 +429,8 @@ class Soup:
         i_res = self.get_residue_count() - 1
         self.residue_store.atom_count[i_res] += 1
         self.atom_store.i_res[i_atom] = i_res
+
+        self.atom_store.model[i_atom] = model
 
     def add_residue(
         self,
@@ -693,3 +706,24 @@ class Soup:
         for i_atom in range(self.get_atom_count()):
             atom_proxy.load(i_atom)
             atom_proxy.bfactor = bfactors[i_atom]
+
+    def get_atom_indices(
+        self, atom_indices: Optional[Iterable[int]] = None, skip_waters: bool = False
+    ) -> List[int]:
+        if atom_indices is None:
+            atom_indices = list(range(self.get_atom_count()))
+
+        if skip_waters:
+            atom_proxy = self.get_atom_proxy()
+            residue_proxy = self.get_residue_proxy()
+
+            def res_type(i_atom):
+                return residue_proxy.load(atom_proxy.load(i_atom).i_res).res_type
+
+            atom_indices = [
+                i_atom for i_atom in atom_indices if res_type(i_atom) != "HOH"
+            ]
+            n_water = self.get_atom_count() - len(atom_indices)
+            print(f"Skipping water molecules {n_water}/{self.get_atom_count()}")
+
+        return atom_indices
