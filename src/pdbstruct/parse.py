@@ -43,52 +43,47 @@ def strip_left_if_too_long(s, max_length):
     return s
 
 
-def strip_lines(pdb_txt, tag_func):
-    new_lines = []
-    for line in pdb_txt.splitlines():
-        if tag_func(line):
-            continue
-        new_lines.append(line)
-    return "\n".join(new_lines)
+def add_suffix_to_basename(filename: str, suffix: str) -> str:
+    """
+    Add a suffix to the basename of a filename while preserving directory and extension.
 
+    Args:
+        filename: Input filename (can include path)
+        suffix: Suffix to add to basename (e.g., "-extra")
 
-def strip_hydrogens(pdb_txt):
-    new_lines = []
-    for line in pdb_txt.splitlines():
-        if line.startswith("ATOM"):
-            atom_type = line[12:16]
-            if atom_type[0] == "H" or atom_type[1] == "H":
-                continue
-        new_lines.append(line)
-    return "\n".join(new_lines)
+    Returns:
+        Modified filename with suffix added to basename
 
+    Examples:
+        add_suffix_to_basename("protein.pdb", "-extra") -> "protein-extra.pdb"
+        add_suffix_to_basename("/path/to/protein.pdb", "-extra") -> "/path/to/protein-extra.pdb"
+        add_suffix_to_basename("protein", "-extra") -> "protein-extra"
+    """
+    import os
 
-def strip_other_nmr_models(pdb_txt):
-    new_lines = []
-    for line in pdb_txt.splitlines():
-        new_lines.append(line)
-        if line.startswith("ENDMDL"):
-            break
-    return "\n".join(new_lines)
+    # Split into directory, basename, and extension
+    dir_path = os.path.dirname(filename)
+    base_name = os.path.basename(filename)
 
+    # Split basename into name and extension
+    name, ext = os.path.splitext(base_name)
 
-def strip_alternative_atoms(pdb_txt):
-    new_lines = []
-    for line in pdb_txt.splitlines():
-        new_line = line
-        if line.startswith("ATOM"):
-            alt_loc = line[16]
-            if alt_loc not in [" "]:
-                if alt_loc in ["A", "a"]:
-                    new_line = line[:16] + " " + line[17:]
-                else:
-                    continue
-        new_lines.append(new_line)
-    return "\n".join(new_lines)
+    # Add suffix to name
+    new_name = name + suffix
+
+    # Reconstruct the full path
+    new_basename = new_name + ext
+
+    if dir_path:
+        return os.path.join(dir_path, new_basename)
+    else:
+        return new_basename
 
 
 class PdbParser:
-    def __init__(self, soup: Soup, scrub: bool = False, skip_water: bool=False) -> None:
+    def __init__(
+        self, soup: Soup, scrub: bool = False, skip_water: bool = False
+    ) -> None:
         self.soup: Soup = soup
         self.scrub = scrub
         self.skip_water = skip_water
@@ -124,7 +119,9 @@ class PdbParser:
                     bfactor = float(line[60:66])
                     elem = line[76:78].strip()
                 except (ValueError, IndexError) as e:
-                    error_msg = f"PDB parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    error_msg = (
+                        f"PDB parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    )
                     self.errors.append(error_msg)
                     continue
 
@@ -181,7 +178,9 @@ class PdbParser:
                             residue.ss = "H"
                             residue.i_res = residue.i_res + 1
                 except (ValueError, IndexError) as e:
-                    error_msg = f"HELIX parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    error_msg = (
+                        f"HELIX parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    )
                     self.errors.append(error_msg)
 
             elif line.startswith("SHEET"):
@@ -203,7 +202,9 @@ class PdbParser:
                             residue.ss = "E"
                             residue.i_res = residue.i_res + 1
                 except (ValueError, IndexError) as e:
-                    error_msg = f"SHEET parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    error_msg = (
+                        f"SHEET parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    )
                     self.errors.append(error_msg)
 
     def parse_title(self, lines: List[str]) -> str:
@@ -281,7 +282,7 @@ class CifParser:
         for line in lines:
             if line.startswith("_atom_site."):
                 i = len(self.i_by_field)
-                field = line.strip().split('.')[-1]
+                field = line.strip().split(".")[-1]
                 self.i_by_field[field] = i
 
     def parse_atom_lines(self, lines: List[str]):
@@ -346,10 +347,12 @@ class CifParser:
                         last_entity = entity
                         next_res_num = res_num + 1
 
-                    model =  get_token("pdbx_PDB_model_num", 1, int)
+                    model = get_token("pdbx_PDB_model_num", 1, int)
 
                 except (ValueError, IndexError) as e:
-                    error_msg = f"CIF parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    error_msg = (
+                        f"CIF parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    )
                     self.errors.append(error_msg)
                     continue
 
@@ -509,168 +512,172 @@ def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
     return soup
 
 
-def add_suffix_to_basename(filename: str, suffix: str) -> str:
-    """
-    Add a suffix to the basename of a filename while preserving directory and extension.
-
-    Args:
-        filename: Input filename (can include path)
-        suffix: Suffix to add to basename (e.g., "-extra")
-
-    Returns:
-        Modified filename with suffix added to basename
-
-    Examples:
-        add_suffix_to_basename("protein.pdb", "-extra") -> "protein-extra.pdb"
-        add_suffix_to_basename("/path/to/protein.pdb", "-extra") -> "/path/to/protein-extra.pdb"
-        add_suffix_to_basename("protein", "-extra") -> "protein-extra"
-    """
-    import os
-
-    # Split into directory, basename, and extension
-    dir_path = os.path.dirname(filename)
-    base_name = os.path.basename(filename)
-
-    # Split basename into name and extension
-    name, ext = os.path.splitext(base_name)
-
-    # Add suffix to name
-    new_name = name + suffix
-
-    # Reconstruct the full path
-    new_basename = new_name + ext
-
-    if dir_path:
-        return os.path.join(dir_path, new_basename)
-    else:
-        return new_basename
-
-
-def write_pdb(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None) -> None:
+def write_pdb(
+    soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None
+) -> None:
     atom_proxy = soup.get_atom_proxy()
     residue_proxy = soup.get_residue_proxy()
+    errors = []
 
-    with open(filename, "w") as f:
-        if soup.title:
-            f.write(f"TITLE     {soup.title}\n")
+    try:
+        with open(filename, "w") as f:
+            if soup.title:
+                try:
+                    f.write(f"TITLE     {soup.title}\n")
+                except Exception as e:
+                    errors.append(f"Error writing title: {str(e)}")
 
-        for i_atom in soup.get_atom_indices(atom_indices):
-            atom_proxy.load(i_atom)
-            residue_proxy.load(atom_proxy.i_res)
+            for i_atom in soup.get_atom_indices(atom_indices):
+                try:
+                    atom_proxy.load(i_atom)
+                    residue_proxy.load(atom_proxy.i_res)
 
-            atom_counter = strip_left_if_too_long(str(i_atom + 1), 5)
-            res_num = strip_left_if_too_long(str(residue_proxy.res_num), 4)
+                    group_pdb = "HETATM" if atom_proxy.is_hetatm else "ATOM"
+                    atom_counter = strip_left_if_too_long(str(i_atom + 1), 5)
+                    res_num = strip_left_if_too_long(str(residue_proxy.res_num), 4)
 
-            # Format ATOM record according to PDB specification
-            # Columns: 1-6: Record name, 7-11: Atom serial, 13-16: Atom name,
-            # 17: Alt loc, 18-20: Residue name, 22: Chain, 23-26: Residue seq,
-            # 27: Insertion code, 31-38: X, 39-46: Y, 47-54: Z,
-            # 55-60: Occupancy, 61-66: B-factor, 77-78: Element
-            line = (
-                f"{'ATOM':<6}{atom_counter:>5} {pad_atom_type(atom_proxy.atom_type):<4}"
-                f"{atom_proxy.alt if atom_proxy.alt else ' ':1}{residue_proxy.res_type:<3} "
-                f"{residue_proxy.chain:1}{res_num:>4}"
-                f"{residue_proxy.ins_code if residue_proxy.ins_code else ' ':1}   "
-                f"{atom_proxy.pos.x:8.3f}{atom_proxy.pos.y:8.3f}{atom_proxy.pos.z:8.3f}"
-                f"{atom_proxy.occupancy:6.2f}{atom_proxy.bfactor:6.2f}          {atom_proxy.elem:>2}\n"
-            )
-            f.write(line)
+                    # Format ATOM record according to PDB specification
+                    # Columns: 1-6: Record name, 7-11: Atom serial, 13-16: Atom name,
+                    # 17: Alt loc, 18-20: Residue name, 22: Chain, 23-26: Residue seq,
+                    # 27: Insertion code, 31-38: X, 39-46: Y, 47-54: Z,
+                    # 55-60: Occupancy, 61-66: B-factor, 77-78: Element
+                    line = (
+                        f"{group_pdb:<6}{atom_counter:>5} {pad_atom_type(atom_proxy.atom_type):<4}"
+                        f"{atom_proxy.alt if atom_proxy.alt else ' ':1}{residue_proxy.res_type:<3} "
+                        f"{residue_proxy.chain:1}{res_num:>4}"
+                        f"{residue_proxy.ins_code if residue_proxy.ins_code else ' ':1}   "
+                        f"{atom_proxy.pos.x:8.3f}{atom_proxy.pos.y:8.3f}{atom_proxy.pos.z:8.3f}"
+                        f"{atom_proxy.occupancy:6.2f}{atom_proxy.bfactor:6.2f}          {atom_proxy.elem:>2}\n"
+                    )
+                    f.write(line)
+                except Exception as e:
+                    errors.append(f"Error writing atom {i_atom}: {str(e)}")
+                    continue
 
-        f.write("END\n")
+            try:
+                f.write("END\n")
+            except Exception as e:
+                errors.append(f"Error writing END record: {str(e)}")
+
+    except IOError as e:
+        raise IOError(f"Could not write to file {filename}: {e}")
+
+    if errors:
+        print(f"Warning: PDB writer encountered {len(errors)} error(s):")
+        for error in errors:
+            print(f"  - {error}")
 
 
 def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):
     """Write structure data to CIF format file."""
     atom_proxy = soup.get_atom_proxy()
     residue_proxy = soup.get_residue_proxy()
+    errors = []
 
-    with open(filename, "w") as f:
-        # Write header information
-        f.write("data_structure\n")
-        f.write("#\n")
+    try:
+        with open(filename, "w") as f:
+            # Write header information
+            try:
+                f.write("data_structure\n")
+                f.write("#\n")
 
-        if soup.title:
-            f.write(f"_struct.title '{soup.title}'\n")
-        f.write("#\n")
+                if soup.title:
+                    f.write(f"_struct.title '{soup.title}'\n")
+                f.write("#\n")
 
-        # Write atom site loop header
-        f.write("loop_\n")
-        f.write("_atom_site.group_PDB\n")
-        f.write("_atom_site.id\n")
-        f.write("_atom_site.type_symbol\n")
-        f.write("_atom_site.label_atom_id\n")
-        f.write("_atom_site.label_alt_id\n")
-        f.write("_atom_site.label_comp_id\n")
-        f.write("_atom_site.label_asym_id\n")
-        f.write("_atom_site.label_entity_id\n")
-        f.write("_atom_site.label_seq_id\n")
-        f.write("_atom_site.pdbx_PDB_ins_code\n")
-        f.write("_atom_site.Cartn_x\n")
-        f.write("_atom_site.Cartn_y\n")
-        f.write("_atom_site.Cartn_z\n")
-        f.write("_atom_site.occupancy\n")
-        f.write("_atom_site.B_iso_or_equiv\n")
-        f.write("_atom_site.pdbx_formal_charge\n")
-        f.write("_atom_site.auth_seq_id\n")
-        f.write("_atom_site.auth_comp_id\n")
-        f.write("_atom_site.auth_asym_id\n")
-        f.write("_atom_site.auth_atom_id\n")
-        f.write("_atom_site.pdbx_PDB_model_num\n")
+                # Write atom site loop header
+                f.write("loop_\n")
+                f.write("_atom_site.group_PDB\n")
+                f.write("_atom_site.id\n")
+                f.write("_atom_site.type_symbol\n")
+                f.write("_atom_site.label_atom_id\n")
+                f.write("_atom_site.label_alt_id\n")
+                f.write("_atom_site.label_comp_id\n")
+                f.write("_atom_site.label_asym_id\n")
+                f.write("_atom_site.label_entity_id\n")
+                f.write("_atom_site.label_seq_id\n")
+                f.write("_atom_site.pdbx_PDB_ins_code\n")
+                f.write("_atom_site.Cartn_x\n")
+                f.write("_atom_site.Cartn_y\n")
+                f.write("_atom_site.Cartn_z\n")
+                f.write("_atom_site.occupancy\n")
+                f.write("_atom_site.B_iso_or_equiv\n")
+                f.write("_atom_site.pdbx_formal_charge\n")
+                f.write("_atom_site.auth_seq_id\n")
+                f.write("_atom_site.auth_comp_id\n")
+                f.write("_atom_site.auth_asym_id\n")
+                f.write("_atom_site.auth_atom_id\n")
+                f.write("_atom_site.pdbx_PDB_model_num\n")
+            except Exception as e:
+                errors.append(f"Error writing CIF header: {str(e)}")
 
-        # Write atom data
-        entity_id = 1
-        current_chain = None
+            # Write atom data
+            entity_id = 1
+            current_chain = None
 
-        for i_atom in soup.get_atom_indices(atom_indices):
-            atom_proxy.load(i_atom)
-            residue_proxy.load(atom_proxy.i_res)
+            for i_atom in soup.get_atom_indices(atom_indices):
+                try:
+                    atom_proxy.load(i_atom)
+                    residue_proxy.load(atom_proxy.i_res)
 
-            # Determine if this is ATOM or HETATM
-            group_pdb = "HETATM" if atom_proxy.is_hetatm else "ATOM"
+                    group_pdb = "HETATM" if atom_proxy.is_hetatm else "ATOM"
 
-            # Update entity_id when chain changes
-            if current_chain != residue_proxy.chain:
-                if current_chain is not None:
-                    entity_id += 1
-                current_chain = residue_proxy.chain
+                    # Update entity_id when chain changes
+                    if current_chain != residue_proxy.chain:
+                        if current_chain is not None:
+                            entity_id += 1
+                        current_chain = residue_proxy.chain
 
-            # Format atom record
-            atom_id = i_atom + 1
-            alt_id = atom_proxy.alt
-            if not alt_id.strip():
-                alt_id = "."
-            ins_code = residue_proxy.ins_code
-            if not ins_code.strip():
-                ins_code = "?"
-            chain = residue_proxy.chain
-            if not chain.strip():
-                chain = "?"
+                    atom_id = i_atom + 1
+                    alt_id = atom_proxy.alt
+                    if not alt_id.strip():
+                        alt_id = "."
+                    ins_code = residue_proxy.ins_code
+                    if not ins_code.strip():
+                        ins_code = "?"
+                    chain = residue_proxy.chain
+                    if not chain.strip():
+                        chain = "?"
 
-            # Write the atom line
-            f.write(f"{group_pdb:<6} ")
-            f.write(f"{atom_id:<6} ")
-            f.write(f"{atom_proxy.elem:<2} ")
-            f.write(f"{atom_proxy.atom_type:<4} ")
-            f.write(f"{alt_id:<1} ")
-            f.write(f"{residue_proxy.res_type:<3} ")
-            f.write(f"{chain:<1} ")
-            f.write(f"{entity_id:<1} ")
-            f.write(f"{residue_proxy.res_num:<4} ")
-            f.write(f"{ins_code:<1} ")
-            f.write(f"{atom_proxy.pos.x:8.3f} ")
-            f.write(f"{atom_proxy.pos.y:8.3f} ")
-            f.write(f"{atom_proxy.pos.z:8.3f} ")
-            f.write(f"{atom_proxy.occupancy:6.2f} ")
-            f.write(f"{atom_proxy.bfactor:6.2f} ")
-            f.write("? ")  # pdbx_formal_charge
-            f.write(f"{residue_proxy.res_num:<4} ")
-            f.write(f"{residue_proxy.res_type:<3} ")
-            f.write(f"{residue_proxy.chain:<1} ")
-            f.write(f"{atom_proxy.atom_type:<4} ")
-            f.write("1")  # pdbx_PDB_model_num
-            f.write("\n")
+                    # Write the atom line
+                    f.write(f"{group_pdb:<6} ")
+                    f.write(f"{atom_id:<6} ")
+                    f.write(f"{atom_proxy.elem:<2} ")
+                    f.write(f"{atom_proxy.atom_type:<4} ")
+                    f.write(f"{alt_id:<1} ")
+                    f.write(f"{residue_proxy.res_type:<3} ")
+                    f.write(f"{chain:<1} ")
+                    f.write(f"{entity_id:<1} ")
+                    f.write(f"{residue_proxy.res_num:<4} ")
+                    f.write(f"{ins_code:<1} ")
+                    f.write(f"{atom_proxy.pos.x:8.3f} ")
+                    f.write(f"{atom_proxy.pos.y:8.3f} ")
+                    f.write(f"{atom_proxy.pos.z:8.3f} ")
+                    f.write(f"{atom_proxy.occupancy:6.2f} ")
+                    f.write(f"{atom_proxy.bfactor:6.2f} ")
+                    f.write("? ")  # pdbx_formal_charge
+                    f.write(f"{residue_proxy.res_num:<4} ")
+                    f.write(f"{residue_proxy.res_type:<3} ")
+                    f.write(f"{residue_proxy.chain:<1} ")
+                    f.write(f"{atom_proxy.atom_type:<4} ")
+                    f.write(f"{atom_proxy.model}")  # pdbx_PDB_model_num
+                    f.write("\n")
+                except Exception as e:
+                    errors.append(f"Error writing CIF atom {i_atom}: {str(e)}")
+                    continue
 
-        f.write("#\n")
+            try:
+                f.write("#\n")
+            except Exception as e:
+                errors.append(f"Error writing CIF footer: {str(e)}")
+
+    except IOError as e:
+        raise IOError(f"Could not write to file {filename}: {e}")
+
+    if errors:
+        print(f"Warning: CIF writer encountered {len(errors)} error(s):")
+        for error in errors:
+            print(f"  - {error}")
 
 
 def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):
@@ -680,15 +687,24 @@ def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] 
     Args:
         soup: Soup object containing structure data
         filename: Output filename (extension determines format)
+        atom_indices: Optional iterable of atom indices to write
 
     Raises:
         ValueError: If file extension is not supported
+        IOError: If file cannot be written
     """
-    ext = os.path.splitext(filename)[1].lower()
+    try:
+        ext = os.path.splitext(filename)[1].lower()
 
-    if ext == ".cif":
-        write_cif(soup, filename, atom_indices)
-    elif ext in [".pdb", ".ent"]:
-        write_pdb(soup, filename, atom_indices)
-    else:
-        raise ValueError(f"Unsupported file extension '{ext}'. Use .pdb, .ent, or .cif")
+        if ext == ".cif":
+            write_cif(soup, filename, atom_indices)
+        elif ext in [".pdb", ".ent"]:
+            write_pdb(soup, filename, atom_indices)
+        else:
+            raise ValueError(f"Unsupported file extension '{ext}'. Use .pdb, .ent, or .cif")
+    except (ValueError, IOError):
+        # Re-raise these specific exceptions
+        raise
+    except Exception as e:
+        # Catch any other unexpected errors
+        raise IOError(f"Unexpected error writing to {filename}: {str(e)}")
