@@ -1,15 +1,22 @@
 
 
 
-# pdbstruct 1.0 
+  # pdbstruct 1.0 
 
-(was formerly [Hollow](https://github.com/boscoh/hollow))
-
-`pdbstruct` provides a set of tools and a good base for fast protein analysis in python. The current set of tools are:
+`pdbstruct` provides a set of tools for fast protein analysis in python. Current tools:
 
 1. `pdbstruct hollow --help` - generates fake atoms to facilitate high resolution display of voids, pockets and channels.
 2. `pdbstruct volume --help` - volume calculator and generator of fake atoms that fill the space.
 3. `pdstruct asa --help` - ASA calculator and saves a PDB/CIF file with ASA in the bfactor column.
+
+This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package,
+which is capable of forming a foundation for efficient protein analysis:
+
+- modern python3 packaging
+- mmCIF parsers and writers
+- memory efficient representation of protein, noticeable for larger proteins
+- spatial hashing for fast pair-wise search
+
 
 ## Quick install
 
@@ -17,7 +24,7 @@
 
    `>> pip install -g pdbstruct`
 
-2. If you have uv installed:
+2. If you have [uv](https://docs.astral.sh/uv/) installed:
 
    `>> uv tool install pdbstruct`
 
@@ -53,7 +60,6 @@ Please refer to the [website](https://boscoh.github.io/pdbstruct/) for illustrat
 In the automated (also the default) mode, a grid is constructed over the entire protein. To analyze large proteins, due to the large size of the resultant grid, use only coarse grid spacings of 1.0 angstroms or 0.5 angstroms. 
 
 The automated mode requires several intermediate calculations. The Accessible Surface Area is first calculated to define surface atoms. Then we sweep a large ball (of say 8.0 angstroms) over all the surface atoms to remove grid points near the surface of the protein. The remaining grid points found under the ball define depressions. This is the costliest part of the calculation.
-
 
 
 
@@ -135,19 +141,28 @@ Three other options are also given, and these relate to the chemistry of the fak
 
 
 
-## Atomic radii
+  ## Atomic radii
   
 In order to calculate the accessible surface area, we need the atomic radii. In the program, a set of standard atomic radii are read from the radii.txt. Edit this file to add or change radii for different elements. If the element is not defined, we give it a default of 1.8 angstroms (identified as element '.' in the radii.txt).
 
 
 
-## B-factors
+  ## B-factors
 
 We also calculate appropriate B-factors of every fake atom, by averaging over the heavy protein atoms around each fake atom. This is controlled by the command-line option 'BFACTOR_PROBE'.
 
 
-
-## Works with PyMol
+  ## Works with PyMol
 
 We developed this program with output designed to be easily viewed and manipulated with PyMol, an open-source protein viewer. By default, the hollow spheres are stored with the "ATOM" field as water oxygen molecules. Pymol can draw the molecular surface of overlapping fake water molecules as it interprets "ATOM" as if the atoms belong to a pseudo polymer.
 
+  ## Change log
+
+- Version 2.0 (Jun 2025). Python 3. pypi. mmCif. Memory effient
+    representation of protein. Spatial hashing to speed pair-wise
+    search. Removed idle functions.
+- Version 1.3 (May 2020). Python 3/2 compatible.</li>
+- Version 1.2 (Aug 2011). Changed exceptions to work with Python 2.7
+    (thanks Joshua Adelman)
+- Version 1.1 (Feb 2009). Faster initialization of grid. Works in the
+    IDLE Python interpreter.
