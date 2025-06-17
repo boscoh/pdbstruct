@@ -15,15 +15,15 @@
 
 1. If you have python installed:
 
-    >> pip install -g pdbstruct
+   `>> pip install -g pdbstruct`
 
 2. If you have uv installed:
 
-    >> uv tool install pdbstruct
+   `>> uv tool install pdbstruct`
 
 3. If you have downloaded the package on your computer:
 
-    >> pip install -e .
+   `>> pip install -e .`
 
 ## Hollow
 
