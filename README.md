@@ -17,13 +17,13 @@ To see the options, type in the command line:
 The program requires Python 2.4 or higher. 
 
 Please refer to the website for illustrated tutorials:
-Please refer to the [website](https://boscoh.github.io/hollow/) for illustrated tutorials:
+Please refer to the [website](https://boscoh.github.io/pdbstruct/) for illustrated tutorials:
 
   1) The interior pathways of myoglobin:
-       https://boscoh.github.io/hollow/myoglobin.html
+       https://boscoh.github.io/pdbstruct/myoglobin.html
 
   2) The channel surface of a phosphate proin:
-       https://boscoh.github.io/hollow/channel.html
+       https://boscoh.github.io/pdbstruct/channel.html
 
 
 ## Automated Surface Detection Mode
