@@ -264,31 +264,57 @@ class CifParser:
     def is_atom_line(self, line: str) -> bool:
         return line.startswith("ATOM") or line.startswith("HETATM")
 
-    def parse_atom_lines(self, pdb_lines: List[str]) -> None:
+    def parse_fields(self, lines: List[str]):
+        self.i_by_field = {}
+        for line in lines:
+            if line.startswith("_atom_site."):
+                i = len(self.i_by_field)
+                field = line.strip().split('.')[-1]
+                self.i_by_field[field] = i
+
+    def parse_atom_lines(self, lines: List[str]):
         """Parse atom lines from CIF format."""
+        self.parse_fields(lines)
+
         next_res_num = None
         last_chain = None
         last_entity = None
+        tokens = []
 
-        for i_line, line in enumerate(pdb_lines):
+        def get_token(field, default, fn=None):
+            i = self.i_by_field.get(field, None)
+            if i is None:
+                return default
+            if i >= len(tokens):
+                return default
+            if fn:
+                return fn(tokens[i])
+            return tokens[i]
+
+        for i_line, line in enumerate(lines):
             if self.is_atom_line(line):
                 tokens = re.split(r"[ ,]+", line)
                 try:
-                    elem = tokens[2]
-                    atom_type = remove_quotes(tokens[3])
-                    alt = "" if tokens[4] == "." else tokens[4]
-                    res_type = tokens[5]
-                    chain = tokens[6]
-                    entity = tokens[7]
-                    ins_code = " " if tokens[9] == "?" else tokens[9]
-                    x = float(tokens[10])
-                    y = float(tokens[11])
-                    z = float(tokens[12])
-                    occupancy = float(tokens[13])
-                    bfactor = float(tokens[14])
+                    elem = get_token("type_symbol", " ")
+                    atom_type = remove_quotes(get_token("label_atom_id", ""))
+                    alt = get_token("label_alt_id", "")
+                    if alt == ".":
+                        alt = ""
+                    res_type = get_token("label_comp_id", "XXX")
+                    chain = get_token("label_asym_id", " ")
+                    entity = get_token("entity_asym_id", " ")
+                    ins_code = get_token("pdbx_PDB_ins_code", " ")
+                    if ins_code == "?":
+                        ins_code = " "
+                    x = get_token("Cartn_x", 0.0, float)
+                    y = get_token("Cartn_y", 0.0, float)
+                    z = get_token("Cartn_z", 0.0, float)
+                    occupancy = get_token("Cartn_z", 1.0, float)
+                    bfactor = get_token("B_iso_or_equiv", 0.0, float)
 
-                    # res_num
-                    if tokens[8] == ".":
+                    label_seq_id = get_token("label_seq_id", 0, int)
+                    if label_seq_id == ".":
+                        # must count ourselves
                         is_same_chain_and_entity = (
                             chain == last_chain and entity == last_entity
                         )
@@ -301,12 +327,12 @@ class CifParser:
                             last_entity = entity
                         res_num = next_res_num
                     else:
-                        res_num = int(tokens[16])
+                        res_num = get_token("auth_seq_id", 0, int)
                         last_chain = chain
                         last_entity = entity
                         next_res_num = res_num + 1
 
-                    model = int(tokens[20])
+                    model =  get_token("pdbx_PDB_model_num", 1, int)
 
                 except (ValueError, IndexError) as e:
                     self.error = f"line {i_line}"

@@ -7,6 +7,7 @@ from typing import Optional
 
 import click
 
+from pdbstruct.parse import add_suffix_to_basename
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
 from .util import read_parameters, this_dir
@@ -188,7 +189,7 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
 )
 def hollow(
     input_file: str,
-    output: Optional[str],
+    output_file: Optional[str],
     grid_spacing: float,
     surface_probe: float,
     include_waters: bool,
@@ -207,7 +208,7 @@ def hollow(
 
         pdbstruct hollow protein.pdb
 
-        pdbstruct hollow protein.pdb --output cavities.pdb
+        pdbstruct hollow protein.pdb --output_file cavities.pdb
 
         pdbstruct hollow protein.pdb --grid-spacing 0.3 --interior-probe 1.2
     """
@@ -227,15 +228,10 @@ def hollow(
         click.echo("Error: Bfactor probe radius must be non-negative", err=True)
         sys.exit(1)
 
-    # Generate default output filename if not provided
-    if output is None:
-        base_name = input_file.replace(".pdb", "").replace(".cif", "")
-        output = f"{base_name}-hollow.pdb"
-
     try:
         make_hollow_spheres(
             input_file,
-            output,
+            output_file,
             grid_spacing,
             interior_probe,
             not include_waters,
@@ -243,7 +239,7 @@ def hollow(
             constraint_file or "",
             bfactor_probe,
         )
-        click.echo(f"Hollow spheres written to {output}")
+        click.echo(f"Hollow spheres written to {output_file}")
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
