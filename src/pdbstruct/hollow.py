@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import ast
 import math
 import os
 import sys
@@ -10,30 +9,14 @@ import tqdm
 
 from . import asa, vector3d
 from .bgrid import BoolGrid
+from .util import read_parameters, this_dir
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
 from .vector3d import pos_distance_sq
 
 
-class AttrDict(dict):
-    def __getattr__(self, item):
-        try:
-            return self[item]
-        except KeyError:
-            raise AttributeError(item)
-
-    def __setattr__(self, key, value):
-        self[key] = value
-
-
-def read_parameters(fname):
-    with open(fname, "r") as f:
-        return AttrDict(ast.literal_eval(f.read()))
-
-
-defaults_fname = os.path.join(os.path.dirname(__file__), "hollow.defaults.txt")
-defaults = read_parameters(defaults_fname)
+defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
 
 
 class HollowGrid:
