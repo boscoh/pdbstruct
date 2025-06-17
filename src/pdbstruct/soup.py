@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterable
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from .store import Store
 from .vector3d import Vector3d, pos_distance
@@ -96,6 +96,7 @@ ATOM_STORE_FIELDS = [
     ("i_chain", "int32"),
     ("radius", "float32"),
     ("model", "int8"),
+    ("is_hetatm", "bool"),
 ]
 
 RESIDUE_STORE_FIELDS = [
@@ -124,7 +125,6 @@ class AtomProxy:
             self.load(i_atom)
 
     def load(self, i_atom: int):
-        """Load atom at given index"""
         self.i_atom = i_atom
         self._pos.x = self.soup.atom_store.x[self.i_atom]
         self._pos.y = self.soup.atom_store.y[self.i_atom]
@@ -133,86 +133,75 @@ class AtomProxy:
 
     @property
     def pos(self) -> Vector3d:
-        """Get atom position"""
         return self._pos
 
     @property
     def bfactor(self) -> float:
-        """Get B-factor"""
         return self.soup.atom_store.bfactor[self.i_atom]
 
     @bfactor.setter
     def bfactor(self, bfactor: float):
-        """Set residue index"""
         self.soup.atom_store.bfactor[self.i_atom] = bfactor
 
     @property
     def occupancy(self) -> float:
-        """Get B-factor"""
         return self.soup.atom_store.occupancy[self.i_atom]
 
     @occupancy.setter
     def occupancy(self, occupancy: float):
-        """Set residue index"""
         self.soup.atom_store.occupancy[self.i_atom] = occupancy
 
     @property
     def elem(self) -> str:
-        """Get element"""
         i_elem = self.soup.atom_store.i_elem[self.i_atom]
         return self.soup.elems[i_elem]
 
     @property
     def atom_type(self) -> str:
-        """Get atom type"""
         i_atom_type = self.soup.atom_store.i_atom_type[self.i_atom]
         return self.soup.atom_types[i_atom_type]
 
     @property
     def alt(self) -> str:
-        """Get alternate location"""
         return int_to_char(self.soup.atom_store.alt[self.i_atom])
 
     @alt.setter
     def alt(self, c: str):
-        """Set alternate location"""
         self.soup.atom_store.alt[self.i_atom] = char_to_int(c)
 
     @property
     def i_res(self) -> int:
-        """Get residue index"""
         return self.soup.atom_store.i_res[self.i_atom]
 
     @i_res.setter
     def i_res(self, i_res: int):
-        """Set residue index"""
         self.soup.atom_store.i_res[self.i_atom] = i_res
 
     @property
     def radius(self) -> float:
-        """Get atom radius"""
         return self.soup.atom_store.radius[self.i_atom]
 
     @property
+    def is_hetatm(self) -> int:
+        return int_to_bool(self.soup.atom_store.is_hetatm[self.i_atom])
+
+    @is_hetatm.setter
+    def is_hetatm(self, is_hetatm: bool):
+        self.soup.atom_store.is_hetatm[self.i_atom] = bool_to_int(is_hetatm)
+
+    @property
     def model(self) -> int:
-        """Get model number"""
         return self.soup.atom_store.model[self.i_atom]
 
     @model.setter
     def model(self, model: int):
-        """Set model number"""
         self.soup.atom_store.model[self.i_atom] = model
 
     def __repr__(self):
-        """String representation of atom"""
         if self.i_atom is None:
             return "AtomProxy(unloaded)"
-
         res_proxy = self.soup.get_residue_proxy(self.i_res)
-        return (
-            f"{res_proxy.chain}{res_proxy.res_num}{res_proxy.ins_code.strip()}-{res_proxy.res_type}:{self.atom_type}"
-        )
-
+        return f"{res_proxy.chain}{res_proxy.res_num}{res_proxy.ins_code.strip()}-{res_proxy.res_type}:{self.atom_type}"
 
 
 class ResidueProxy:
@@ -225,23 +214,19 @@ class ResidueProxy:
             self.load(i_res)
 
     def load(self, i_res: int):
-        """Load residue at given index"""
         self.i_res = i_res
         return self
 
     @property
     def i_atom(self) -> int:
-        """Get central atom index"""
         return self.soup.residue_store.i_central_atom[self.i_res]
 
     @i_atom.setter
     def i_atom(self, i_atom: int):
-        """Set central atom index"""
         self.soup.residue_store.i_central_atom[self.i_res] = i_atom
 
     @property
     def i_chain(self) -> int:
-        """Get chain index"""
         return self.soup.residue_store.i_chain[self.i_res]
 
     @property
@@ -251,69 +236,56 @@ class ResidueProxy:
 
     @property
     def i_structure(self) -> int:
-        """Get structure index"""
         return self.soup.residue_store.i_structure[self.i_res]
 
     @i_structure.setter
     def i_structure(self, i_structure: int):
-        """Set structure index"""
         self.soup.residue_store.i_structure[self.i_res] = i_structure
 
     @property
     def res_num(self) -> int:
-        """Get residue number"""
         return self.soup.residue_store.res_num[self.i_res]
 
     @res_num.setter
     def res_num(self, res_num: int):
-        """Set insertion code"""
         self.soup.residue_store.res_num[self.i_res] = res_num
 
     @property
     def ins_code(self) -> str:
-        """Get insertion code"""
         return int_to_char(self.soup.residue_store.ins_code[self.i_res])
 
     @ins_code.setter
     def ins_code(self, c: str):
-        """Set insertion code"""
         self.soup.residue_store.ins_code[self.i_res] = char_to_int(c)
 
     @property
     def is_polymer(self) -> bool:
-        """Check if residue is polymer"""
         return int_to_bool(self.soup.residue_store.is_polymer[self.i_res])
 
     @is_polymer.setter
     def is_polymer(self, v: bool):
-        """Set polymer flag"""
         self.soup.residue_store.is_polymer[self.i_res] = bool_to_int(v)
 
     @property
     def res_type(self) -> str:
-        """Get residue type"""
         i_res_type = self.soup.residue_store.i_res_type[self.i_res]
         return self.soup.res_types[i_res_type]
 
     @property
     def ss(self) -> str:
-        """Get secondary structure"""
         return int_to_char(self.soup.residue_store.ss[self.i_res])
 
     @ss.setter
     def ss(self, c: str):
-        """Set secondary structure"""
         self.soup.residue_store.ss[self.i_res] = char_to_int(c)
 
     def get_atom_indices(self) -> List[int]:
-        """Get indices of atoms in this residue"""
         i_start = self.soup.residue_store.atom_offset[self.i_res]
         n = self.soup.residue_store.atom_count[self.i_res]
         i_end = i_start + n
         return list(range(i_start, i_end))
 
     def get_i_atom(self, atom_type: str) -> Optional[int]:
-        """Get atom index for given atom type"""
         for i_atom in self.get_atom_indices():
             i_atom_type = self.soup.atom_store.i_atom_type[i_atom]
             test_atom_type = self.soup.atom_types[i_atom_type]
@@ -322,7 +294,6 @@ class ResidueProxy:
         return None
 
     def check_atom_types(self, atom_types: List[str]) -> bool:
-        """Check if residue has all specified atom types"""
         for atom_type in atom_types:
             if self.get_i_atom(atom_type) is None:
                 return False
@@ -398,10 +369,12 @@ class Soup:
         chain: str,
         occupancy: float = 1.0,
         model: int = 1,
+        is_hetatm: bool = False,
     ):
         i_atom = self.atom_store.count
         self.atom_store.increment()
 
+        self.is_hetatm = is_hetatm
         self.atom_store.x[i_atom] = x
         self.atom_store.y[i_atom] = y
         self.atom_store.z[i_atom] = z
@@ -737,4 +710,3 @@ class Soup:
             print(f"Skipping {n_water} water atoms -> {len(atom_indices)} atoms")
 
         return atom_indices
-

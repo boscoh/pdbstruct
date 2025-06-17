@@ -93,7 +93,7 @@ class PdbParser:
         self.scrub = scrub
         self.skip_water = skip_water
         self.has_secondary_structure = False
-        self.error = ""
+        self.errors: List[str] = []
 
     def is_atom_line(self, line: str) -> bool:
         return line.startswith("ATOM") or line.startswith("HETATM")
@@ -123,9 +123,9 @@ class PdbParser:
                     occupancy = float(line[54:60])
                     bfactor = float(line[60:66])
                     elem = line[76:78].strip()
-                except (ValueError, IndexError):
-                    self.error = f"line {i_line}"
-                    print(f'parse_atom_lines: "{line}"')
+                except (ValueError, IndexError) as e:
+                    error_msg = f"PDB parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
                     continue
 
                 if elem == "":
@@ -163,40 +163,48 @@ class PdbParser:
 
         for i_line, line in enumerate(pdb_lines):
             if line.startswith("HELIX"):
-                self.has_secondary_structure = True
-                chain = line[19:20]
-                res_num_start = int(line[21:25])
-                res_num_end = int(line[33:37])
+                try:
+                    self.has_secondary_structure = True
+                    chain = line[19:20]
+                    res_num_start = int(line[21:25])
+                    res_num_end = int(line[33:37])
 
-                for i_res in self.soup.find_residue_indices(
-                    self.soup.i_structure, chain, res_num_start
-                ):
-                    residue.i_res = i_res
-                    while (
-                        residue.i_res < self.soup.get_residue_count()
-                        and residue.res_num <= res_num_end
-                        and chain == residue.chain
+                    for i_res in self.soup.find_residue_indices(
+                        self.soup.i_structure, chain, res_num_start
                     ):
-                        residue.ss = "H"
-                        residue.i_res = residue.i_res + 1
+                        residue.i_res = i_res
+                        while (
+                            residue.i_res < self.soup.get_residue_count()
+                            and residue.res_num <= res_num_end
+                            and chain == residue.chain
+                        ):
+                            residue.ss = "H"
+                            residue.i_res = residue.i_res + 1
+                except (ValueError, IndexError) as e:
+                    error_msg = f"HELIX parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
 
             elif line.startswith("SHEET"):
-                self.has_secondary_structure = True
-                chain = line[21:22]
-                res_num_start = int(line[22:26])
-                res_num_end = int(line[33:37])
+                try:
+                    self.has_secondary_structure = True
+                    chain = line[21:22]
+                    res_num_start = int(line[22:26])
+                    res_num_end = int(line[33:37])
 
-                for i_res in self.soup.find_residue_indices(
-                    self.soup.i_structure, chain, res_num_start
-                ):
-                    residue.i_res = i_res
-                    while (
-                        residue.i_res < self.soup.get_residue_count()
-                        and residue.res_num <= res_num_end
-                        and chain == residue.chain
+                    for i_res in self.soup.find_residue_indices(
+                        self.soup.i_structure, chain, res_num_start
                     ):
-                        residue.ss = "E"
-                        residue.i_res = residue.i_res + 1
+                        residue.i_res = i_res
+                        while (
+                            residue.i_res < self.soup.get_residue_count()
+                            and residue.res_num <= res_num_end
+                            and chain == residue.chain
+                        ):
+                            residue.ss = "E"
+                            residue.i_res = residue.i_res + 1
+                except (ValueError, IndexError) as e:
+                    error_msg = f"SHEET parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
 
     def parse_title(self, lines: List[str]) -> str:
         result = ""
@@ -211,7 +219,7 @@ class PdbParser:
         lines = [line.rstrip("\r") for line in lines]
 
         if len(lines) == 0:
-            self.parsing_error = "No atom lines"
+            self.errors.append("No lines found in input text")
             return
 
         title = self.parse_title(lines)
@@ -235,6 +243,10 @@ class PdbParser:
             i_model -= 1
 
         n_model = len(lines_list)
+        if n_model == 0:
+            self.errors.append("No atom lines found in input")
+            return
+
         for i_model in range(n_model):
             structure_id = pdb_id
             if n_model > 1:
@@ -259,7 +271,7 @@ class CifParser:
         self.scrub = scrub
         self.skip_water = skip_water
         self.has_secondary_structure = False
-        self.error = ""
+        self.errors: List[str] = []
 
     def is_atom_line(self, line: str) -> bool:
         return line.startswith("ATOM") or line.startswith("HETATM")
@@ -337,8 +349,8 @@ class CifParser:
                     model =  get_token("pdbx_PDB_model_num", 1, int)
 
                 except (ValueError, IndexError) as e:
-                    self.error = f"line {i_line}"
-                    print(f'parse_atom_lines {e}: "{line}"')
+                    error_msg = f"CIF parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
                     continue
 
                 if elem == "":
@@ -390,19 +402,23 @@ class CifParser:
                 break
 
             if not line.startswith("_struct_conf"):
-                self.has_secondary_structure = True
-                tokens = re.split(r"[ ,]+", line)
-                chain = tokens[4]
-                res_num_start = int(tokens[5])
-                res_num_end = int(tokens[9])
+                try:
+                    self.has_secondary_structure = True
+                    tokens = re.split(r"[ ,]+", line)
+                    chain = tokens[4]
+                    res_num_start = int(tokens[5])
+                    res_num_end = int(tokens[9])
 
-                for i_res in self.soup.find_residue_indices(
-                    self.soup.i_structure, chain, res_num_start
-                ):
-                    residue.i_res = i_res
-                    while residue.res_num <= res_num_end and chain == residue.chain:
-                        residue.ss = "H"
-                        residue.i_res = residue.i_res + 1
+                    for i_res in self.soup.find_residue_indices(
+                        self.soup.i_structure, chain, res_num_start
+                    ):
+                        residue.i_res = i_res
+                        while residue.res_num <= res_num_end and chain == residue.chain:
+                            residue.ss = "H"
+                            residue.i_res = residue.i_res + 1
+                except (ValueError, IndexError) as e:
+                    error_msg = f"CIF helix parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
 
     def parse_sheet_lines(self, pdb_lines: List[str]) -> None:
         residue = self.soup.get_residue_proxy()
@@ -418,19 +434,23 @@ class CifParser:
                 break
 
             if not line.startswith("_struct"):
-                self.has_secondary_structure = True
-                tokens = re.split(r"[ ,]+", line)
-                chain = tokens[3]
-                res_num_start = int(tokens[4])
-                res_num_end = int(tokens[8])
+                try:
+                    self.has_secondary_structure = True
+                    tokens = re.split(r"[ ,]+", line)
+                    chain = tokens[3]
+                    res_num_start = int(tokens[4])
+                    res_num_end = int(tokens[8])
 
-                for i_res in self.soup.find_residue_indices(
-                    self.soup.i_structure, chain, res_num_start
-                ):
-                    residue.i_res = i_res
-                    while residue.res_num <= res_num_end and chain == residue.chain:
-                        residue.ss = "E"
-                        residue.i_res = residue.i_res + 1
+                    for i_res in self.soup.find_residue_indices(
+                        self.soup.i_structure, chain, res_num_start
+                    ):
+                        residue.i_res = i_res
+                        while residue.res_num <= res_num_end and chain == residue.chain:
+                            residue.ss = "E"
+                            residue.i_res = residue.i_res + 1
+                except (ValueError, IndexError) as e:
+                    error_msg = f"CIF sheet parse error at line {i_line + 1}: {str(e)} - '{line}'"
+                    self.errors.append(error_msg)
 
     def parse_title(self, lines: List[str]) -> str:
         for i, line in enumerate(lines):
@@ -449,7 +469,7 @@ class CifParser:
         lines = [line.rstrip("\r") for line in lines]
 
         if len(lines) == 0:
-            self.parsing_error = "No atom lines"
+            self.errors.append("No lines found in input text")
             return
 
         self.soup.push_structure_id(pdb_id, self.parse_title(lines))
@@ -481,8 +501,10 @@ def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
 
     parser.parse_text(content, pdb_id)
 
-    if parser.error:
-        print(f"Warning: Parser error - {parser.error}")
+    if parser.errors:
+        print(f"Warning: Parser encountered {len(parser.errors)} error(s):")
+        for error in parser.errors:
+            print(f"  - {error}")
 
     return soup
 
@@ -604,33 +626,7 @@ def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] =
             residue_proxy.load(atom_proxy.i_res)
 
             # Determine if this is ATOM or HETATM
-            group_pdb = (
-                "ATOM"
-                if residue_proxy.res_type
-                in [
-                    "ALA",
-                    "ARG",
-                    "ASN",
-                    "ASP",
-                    "CYS",
-                    "GLN",
-                    "GLU",
-                    "GLY",
-                    "HIS",
-                    "ILE",
-                    "LEU",
-                    "LYS",
-                    "MET",
-                    "PHE",
-                    "PRO",
-                    "SER",
-                    "THR",
-                    "TRP",
-                    "TYR",
-                    "VAL",
-                ]
-                else "HETATM"
-            )
+            group_pdb = "HETATM" if atom_proxy.is_hetatm else "ATOM"
 
             # Update entity_id when chain changes
             if current_chain != residue_proxy.chain:
