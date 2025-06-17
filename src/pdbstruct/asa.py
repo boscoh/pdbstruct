@@ -8,7 +8,8 @@ import tqdm
 
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
-from .spacehash import SpaceHash, vertex_diff_sq
+from .spacehash import SpaceHash
+from .vector3d import pos_distance_sq
 
 __doc__ = """
 Routines to calculate the Accessible Surface Area of a set of atoms.
@@ -113,7 +114,7 @@ def calculate_asa_from_vertices_and_radii(
                 j_vertex = neighbor_vertex_indices[i_neighbour]
                 radius_j = radii[j_vertex] + probe
                 vertex_j = spacehash.vertices[j_vertex]
-                if vertex_diff_sq(vertex_j, test_point) < radius_j * radius_j:
+                if pos_distance_sq(vertex_j, test_point) < radius_j * radius_j:
                     i_neighbour_start = i_neighbour
                     is_accessible = False
                     break

@@ -12,7 +12,8 @@ from . import asa, vector3d
 from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
-from .spacehash import SpaceHash, vertex_diff_sq
+from .spacehash import SpaceHash
+from .vector3d import pos_distance_sq
 
 
 class AttrDict(dict):
@@ -222,7 +223,7 @@ class HollowGrid:
                     j_atom = neighbor_indices[i_neighbor]
                     radius_j = radii[j_atom] + probe
                     vertex_j = spacehash.vertices[j_atom]
-                    if vertex_diff_sq(test_point, vertex_j) < radius_j * radius_j:
+                    if pos_distance_sq(test_point, vertex_j) < radius_j * radius_j:
                         i_neighbor_start = i_neighbor
                         is_point_accessible = False
                         break

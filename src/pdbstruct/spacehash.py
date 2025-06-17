@@ -2,12 +2,7 @@ import array
 import math
 from typing import Generator, List, Tuple
 
-
-def vertex_diff_sq(v, w):
-    x = v[0] - w[0]
-    y = v[1] - w[1]
-    z = v[2] - w[2]
-    return x * x + y * y + z * z
+from .vector3d import pos_distance_sq as pos_distance_sq
 
 
 class SpaceHash(object):
@@ -187,7 +182,7 @@ class SpaceHash(object):
             if j_vertex == i_vertex:
                 continue
             r = r0 + radii[j_vertex]
-            if vertex_diff_sq(self.vertices[i_vertex], self.vertices[j_vertex]) < r * r:
+            if pos_distance_sq(self.vertices[i_vertex], self.vertices[j_vertex]) < r * r:
                 result.append(j_vertex)
 
         return result

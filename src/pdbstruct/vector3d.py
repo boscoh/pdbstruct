@@ -11,10 +11,60 @@ def is_near_zero(a):
 
 
 class Vector3d:
+    """
+    A 3D vector class for geometric calculations in 3D space.
+
+    This class represents a vector in 3D Cartesian coordinates and provides
+    methods for common vector operations including arithmetic, transformations,
+    and geometric calculations.
+
+    Attributes:
+        x (float): The x-coordinate component of the vector
+        y (float): The y-coordinate component of the vector
+        z (float): The z-coordinate component of the vector
+
+    Examples:
+        >>> v1 = Vector3d(1.0, 2.0, 3.0)
+        >>> v2 = Vector3d(4.0, 5.0, 6.0)
+        >>> v3 = v1 + v2
+        >>> print(v3)
+        ( 5.00, 7.00, 9.00 )
+
+        >>> length = v1.length()
+        >>> normalized = v1.normal_vec()
+        >>> dot_product = dot(v1, v2)
+
+    Note:
+        This class supports indexing (v[0], v[1], v[2]), iteration, and
+        standard arithmetic operations (+, -, unary -, ==, !=).
+        Vectors can be transformed using Matrix3d transformation matrices.
+    """
+
     def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
         self.y = y
         self.z = z
+
+    def __getitem__(self, index):
+        """Allow indexing: v[0] = x, v[1] = y, v[2] = z"""
+        if index == 0:
+            return self.x
+        elif index == 1:
+            return self.y
+        elif index == 2:
+            return self.z
+        else:
+            raise IndexError("Vector3d index out of range (0-2)")
+
+    def __len__(self):
+        """Return length of vector (always 3 for 3D vector)"""
+        return 3
+
+    def __iter__(self):
+        """Allow iteration over vector components"""
+        yield self.x
+        yield self.y
+        yield self.z
 
     def __add__(self, rhs):
         return Vector3d(rhs.x + self.x, rhs.y + self.y, rhs.z + self.z)
@@ -130,11 +180,11 @@ def angle_diff(angle1, angle2):
 
 
 def dot(a, b):
-    return a.x * b.x + a.y * b.y + a.z * b.z
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 
 
 def CrossProductVec(a, b):
-    return Vector3d(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x)
+    return Vector3d(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
 def pos_distance(p1, p2):
@@ -142,9 +192,9 @@ def pos_distance(p1, p2):
 
 
 def pos_distance_sq(p1, p2):
-    x = p1.x - p2.x
-    y = p1.y - p2.y
-    z = p1.z - p2.z
+    x = p1[0] - p2[0]
+    y = p1[1] - p2[1]
+    z = p1[2] - p2[2]
     return x * x + y * y + z * z
 
 
@@ -365,9 +415,9 @@ def RotationAtOrigin(axis, theta):
 def Translation(p):
     """matrix to translate a vector"""
     m = Matrix3d()
-    m.elem30 = p.x
-    m.elem31 = p.y
-    m.elem32 = p.z
+    m.elem30 = p[0]
+    m.elem31 = p[1]
+    m.elem32 = p[2]
     return m
 
 
