@@ -3,7 +3,7 @@
 
 import math
 import sys
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import tqdm
 
@@ -95,7 +95,7 @@ class VolumeGrid(BoolGrid):
 
     def n_excluded(self) -> int:
         """Count number of excluded (occupied) grid points."""
-        return sum(1 for x in self.array if x != 0)
+        return self.count_set()
 
     def make_soup(self, res_type: str = "HOH", atom_type: str = "O") -> Soup:
         """Create a Soup object with atoms at excluded grid points."""
@@ -166,10 +166,11 @@ def calculate_volume_of_atoms(
 
     # Create grid
     grid = VolumeGrid(grid_spacing, extent, center)
-    print(f"Grid: {grid.n}x{grid.n}x{grid.n}; Width: {grid.actual_width:.2f} Å; Spacing: {grid_spacing} Å")
+    print(f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {grid.actual_width:.1f}Å")
 
     # Exclude spheres for each atom
     atom_proxy = soup.get_atom_proxy()
+    print("Excluding empty space from grid")
     for i_atom in tqdm.tqdm(atom_indices):
         atom_proxy.load(i_atom)
         grid.exclude_sphere(atom_proxy.pos, atom_proxy.radius)
@@ -178,19 +179,19 @@ def calculate_volume_of_atoms(
     d_volume = float(grid_spacing) ** 3
     n_excluded = grid.n_excluded()
     volume = n_excluded * d_volume
+    print(f"Volume: {volume:.2f} Å³")
 
-    # Save grid visualization if requested
     if out_fname:
         print(f"Writing {out_fname}")
         grid_soup = grid.make_soup("HOH", "O")
         write_soup(grid_soup, out_fname)
 
-    return volume, n_excluded
+    return volume
 
 
 def calculate_volume_by_residue(
     soup: Soup, i_res: int, grid_spacing: float = 0.5, out_fname: str = ""
-) -> Tuple[float, int]:
+) -> float:
     """
     Calculate volume of a specific residue.
 
@@ -219,7 +220,7 @@ def calculate_volume_by_residue(
 
 def calculate_volume_by_chain(
     soup: Soup, chain: str, grid_spacing: float = 0.5, out_fname: str = ""
-) -> Tuple[float, int]:
+) -> float:
     """
     Calculate volume of all atoms in a specific chain.
 
@@ -249,20 +250,10 @@ def calculate_volume_by_chain(
     return calculate_volume_of_atoms(soup, atom_indices, grid_spacing, out_fname)
 
 
-def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None, skip_waters=False):
-    try:
-        soup = load_soup(input_file, scrub=True)
-        print(
-            f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
-        )
-
-    except Exception as e:
-        print(f"Error loading file {input_file}: {e}")
-        sys.exit(1)
-
-    if soup.is_empty():
-        print("Error: No atoms found in input file")
-        sys.exit(1)
+def calc_volume(
+    input_file, spacing=0.5, target_chain=None, target_res_num=None, skip_waters=False
+) -> float:
+    soup = load_soup(input_file, scrub=True)
 
     if target_chain and target_res_num is not None:
         # Find specific residue in chain
@@ -282,22 +273,20 @@ def calc_volume(input_file, spacing=0.5, target_chain=None, target_res_num=None,
             print(f"Error: Residue {target_res_num} not found in chain {target_chain}")
             sys.exit(1)
 
-        out_fname = add_suffix_to_basename(input_file, f"-chain{target_chain}-res{target_res_num}-volume")
-        volume, n_points = calculate_volume_by_residue(
-            soup, target_res_index, spacing, out_fname
+        out_fname = add_suffix_to_basename(
+            input_file, f"-chain{target_chain}-res{target_res_num}-volume"
         )
+        volume = calculate_volume_by_residue(soup, target_res_index, spacing, out_fname)
 
     elif target_chain:
         # Calculate volume for entire chain
         out_fname = add_suffix_to_basename(input_file, f"-chain{target_chain}-volume")
-        volume, n_points = calculate_volume_by_chain(
-            soup, target_chain, spacing, out_fname
-        )
+        volume = calculate_volume_by_chain(soup, target_chain, spacing, out_fname)
 
     else:
         # Calculate total volume
         atom_indices = soup.get_atom_indices(skip_waters=skip_waters)
         out_fname = add_suffix_to_basename(input_file, "-volume")
-        volume, n_points = calculate_volume_of_atoms(soup, atom_indices, spacing, out_fname)
+        volume = calculate_volume_of_atoms(soup, atom_indices, spacing, out_fname)
 
-    print(f"Volume: {volume:.2f} Å³")
+    return volume

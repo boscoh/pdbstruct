@@ -480,12 +480,12 @@ class CifParser:
         self.parse_secondary_structure_lines(lines)
 
 
-def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
+def load_soup(input_file: str, scrub=False, skip_water=False) -> Soup:
     """Load structure from PDB or CIF file."""
     soup = Soup()
 
     # Determine file type and parse accordingly
-    ext = os.path.splitext(filename)[1].lower()
+    ext = os.path.splitext(input_file)[1].lower()
     if ext in [".cif", ".mmcif"]:
         parser = CifParser(soup, scrub, skip_water)
     elif ext in [".pdb", ".pdbx"]:
@@ -495,12 +495,12 @@ def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
 
     # Read file content
     try:
-        with open(filename, "r") as f:
+        with open(input_file, "r") as f:
             content = f.read()
     except IOError as e:
-        raise IOError(f"Could not read file {filename}: {e}")
+        raise IOError(f"Could not read file {input_file}: {e}")
 
-    pdb_id = os.path.splitext(os.path.basename(filename))[0]
+    pdb_id = os.path.splitext(os.path.basename(input_file))[0]
 
     parser.parse_text(content, pdb_id)
 
@@ -508,6 +508,13 @@ def load_soup(filename: str, scrub=False, skip_water=False) -> Soup:
         print(f"Warning: Parser encountered {len(parser.errors)} error(s):")
         for error in parser.errors:
             print(f"  - {error}")
+
+    if soup.is_empty():
+        raise ValueError(f"No atoms found in input file {input_file}")
+
+    print(
+        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
+    )
 
     return soup
 

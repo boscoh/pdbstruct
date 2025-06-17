@@ -2,16 +2,20 @@
 # coding: utf-8
 
 import os
-import sys
 from typing import Optional
 
 import click
 
-from pdbstruct.parse import add_suffix_to_basename
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
 from .util import read_parameters, this_dir
 from .volume import calc_volume
+
+
+def validate_positive(ctx, param, value):
+    if value is not None and value < 0:
+        raise click.BadParameter("Value must be positive.")
+    return value
 
 
 @click.group()
@@ -33,6 +37,7 @@ def cli():
     "-s",
     default=0.5,
     type=float,
+    callback=validate_positive,
     help="Grid spacing in Angstroms (default: 0.5, smaller = more accurate but slower)",
 )
 @click.option(
@@ -75,18 +80,8 @@ def volume(
         pdbstruct volume protein.pdb --chain A --residue 100
     """
     if residue is not None and chain is None:
-        click.echo("Error: --residue option requires --chain to be specified", err=True)
-        sys.exit(1)
-
-    if spacing <= 0:
-        click.echo("Error: Grid spacing must be positive", err=True)
-        sys.exit(1)
-
-    try:
-        calc_volume(input_file, spacing, chain, residue, not include_waters)
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+        raise click.UsageError("Error: --residue option requires --chain to be specified")
+    calc_volume(input_file, spacing, chain, residue, not include_waters)
 
 
 @cli.command()
@@ -96,6 +91,7 @@ def volume(
     "-n",
     default=960,
     type=int,
+    callback=validate_positive,
     help="Number of points on sphere for calculation (default: 960, more = accurate but slower)",
 )
 @click.option(
@@ -121,15 +117,7 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
 
         pdbstruct asa protein.pdb --n-sphere 1920
     """
-    if n_sphere <= 0:
-        click.echo("Error: Number of sphere points must be positive", err=True)
-        sys.exit(1)
-
-    try:
-        calc_asa(input_file, n_sphere, not include_waters)
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+    calc_asa(input_file, n_sphere, not include_waters)
 
 
 defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
@@ -143,6 +131,7 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
     "--grid-spacing",
     type=float,
     default=defaults.grid_spacing,
+    callback=validate_positive,
     help=f"Grid spacing (default {defaults.grid_spacing:.1f}; 0.2 for final resolution) Å",
 )
 @click.option(
@@ -164,6 +153,7 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
     "--interior-probe",
     type=float,
     default=defaults.interior_probe,
+    callback=validate_positive,
     help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
 )
 @click.option(
@@ -171,6 +161,7 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
     "--surface-probe",
     type=float,
     default=defaults.surface_probe,
+    callback=validate_positive,
     help=f"Radius of probe to roll over surface used to define depressions (default {defaults.surface_probe:.2f} angstroms)",
 )
 @click.option(
@@ -185,6 +176,7 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
     "--bfactor-probe",
     type=float,
     default=defaults.bfactor_probe,
+    callback=validate_positive,
     help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={defaults.bfactor_probe:.2f})",
 )
 def hollow(
@@ -212,36 +204,16 @@ def hollow(
 
         pdbstruct hollow protein.pdb --grid-spacing 0.3 --interior-probe 1.2
     """
-    if grid_spacing <= 0:
-        click.echo("Error: Grid spacing must be positive", err=True)
-        sys.exit(1)
-
-    if surface_probe <= 0:
-        click.echo("Error: Surface probe radius must be positive", err=True)
-        sys.exit(1)
-
-    if interior_probe <= 0:
-        click.echo("Error: Interior probe radius must be positive", err=True)
-        sys.exit(1)
-
-    if bfactor_probe < 0:
-        click.echo("Error: Bfactor probe radius must be non-negative", err=True)
-        sys.exit(1)
-
-    try:
-        make_hollow_spheres(
-            input_file,
-            output_file,
-            grid_spacing,
-            interior_probe,
-            not include_waters,
-            surface_probe,
-            constraint_file or "",
-            bfactor_probe,
-        )
-    except Exception as e:
-        click.echo(f"Error: {e}", err=True)
-        sys.exit(1)
+    make_hollow_spheres(
+        input_file=input_file,
+        output_file=output_file,
+        grid_spacing=grid_spacing,
+        interior_probe=interior_probe,
+        is_skip_waters=not include_waters,
+        surface_probe=surface_probe,
+        constraint_file=constraint_file or "",
+        bfactor_probe=bfactor_probe,
+    )
 
 
 if __name__ == "__main__":

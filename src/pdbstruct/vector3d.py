@@ -105,6 +105,7 @@ class Vector3d:
         self[0] = x
         self[1] = y
         self[2] = z
+        return self
 
     def copy(self):
         return Vector3d(self[0], self[1], self[2])
@@ -116,11 +117,13 @@ class Vector3d:
         self[0] *= scale
         self[1] *= scale
         self[2] *= scale
+        return self
 
     def normalize(self):
         length = vec_length(self)
         if not is_near_zero(length):
             self.scale(1.0 / length)
+        return self
 
     def transform(self, matrix):
         x = (
@@ -142,6 +145,7 @@ class Vector3d:
             + matrix.elem32
         )
         self[0], self[1], self[2] = x, y, z
+        return self
 
     def tuple(self):
         return (self[0], self[1], self[2])
@@ -300,7 +304,9 @@ def pos_dihedral(p1, p2, p3, p4):
 
 
 def rotated_pos(theta, anchor, center, pos):
-    return rotation_at_center(sub_vec(center, anchor), theta, center).transformed_vec(pos)
+    return rotation_at_center(sub_vec(center, anchor), theta, center).transformed_vec(
+        pos
+    )
 
 
 class Matrix3d:
@@ -508,5 +514,3 @@ def superposition(ref1, ref2, ref3, mov1, mov2, mov3):
         m = m3 * m2 * m1
 
     return m
-
-

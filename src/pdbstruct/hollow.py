@@ -393,9 +393,6 @@ def make_hollow_spheres(
     bfactor_probe=defaults.bfactor_probe,
 ):
     soup = load_soup(input_file, scrub=True)
-    print(
-        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
-    )
 
     atom_indices = soup.get_atom_indices(skip_waters=is_skip_waters)
     center, extent, constraint_fn, inner_constraint_fn, is_calculate_asa_shell = (
@@ -457,6 +454,11 @@ def make_hollow_spheres(
 
 
 def main():
+    def validate_positive(ctx, param, value):
+        if value is not None and value < 0:
+            raise click.BadParameter("Value must be positive.")
+        return value
+
     @click.command()
     @click.version_option()
     @click.argument("input-file", type=click.Path(exists=True))
@@ -465,6 +467,7 @@ def main():
         "--grid-spacing",
         type=float,
         default=defaults.grid_spacing,
+        callback=validate_positive,
         help=f"Grid spacing (default {defaults.grid_spacing:.1f}; 0.2 for final resolution) Å",
     )
     @click.option(
@@ -486,6 +489,7 @@ def main():
         "--interior-probe",
         type=float,
         default=defaults.interior_probe,
+        callback=validate_positive,
         help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
     )
     @click.option(
@@ -493,6 +497,7 @@ def main():
         "--surface-probe",
         type=float,
         default=defaults.surface_probe,
+        callback=validate_positive,
         help=f"Radius of probe to roll over surface used to define depressions (default {defaults.surface_probe:.2f} angstroms)",
     )
     @click.option(
@@ -507,6 +512,7 @@ def main():
         "--bfactor-probe",
         type=float,
         default=defaults.bfactor_probe,
+        callback=validate_positive,
         help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={defaults.bfactor_probe:.2f})",
     )
     def cli(

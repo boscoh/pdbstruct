@@ -268,9 +268,6 @@ def calc_asa(input_file, n_sphere, skip_waters: bool=False):
                               If None, calculates for all atoms.
     """
     soup = load_soup(input_file, scrub=True)
-    print(
-        f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
-    )
 
     if soup.is_empty():
         print("Error: No atoms found in input file")
@@ -279,7 +276,7 @@ def calc_asa(input_file, n_sphere, skip_waters: bool=False):
     atom_indices = soup.get_atom_indices(skip_waters=skip_waters)
 
     print("Calculating ASA of atoms")
-    selected_atom_asas = calculate_asa_from_soup(
+    atom_asas = calculate_asa_from_soup(
         soup,
         probe=1.4,
         n_sphere_point=n_sphere,
@@ -287,14 +284,15 @@ def calc_asa(input_file, n_sphere, skip_waters: bool=False):
     )
 
     # Calculate total ASA only for selected atoms or all atoms
-    total_asa = sum(selected_atom_asas)
-
+    total_asa = sum(atom_asas)
     print(f"Total ASA: {total_asa:.1f} Å²")
 
+    output_file = add_suffix_to_basename(input_file, "-asa")
+    print(f"Writing ASA as atom bfactors to {output_file}")
     all_atom_asas = [0.0] * soup.get_atom_count()
-    for i_atom, asa in zip(atom_indices, selected_atom_asas):
+    for i_atom, asa in zip(atom_indices, atom_asas):
         all_atom_asas[i_atom] = asa
     soup.set_atom_bfactors(all_atom_asas)
-    output_file = add_suffix_to_basename(input_file, "-asa")
     write_soup(soup, output_file, atom_indices=atom_indices)
-    print(f"Wrote ASA as atom bfactors in {output_file}")
+
+    return atom_asas
