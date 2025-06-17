@@ -1,30 +1,52 @@
 
 
 
-# PDBStruct 1.0 (was Hollow)
+# pdbstruct 1.0 
 
-### (c) 2021, Bosco Ho and Franz Gruswitz 
+(was formerly [Hollow](https://github.com/boscoh/hollow))
 
+`pdbstruct` provides a set of tools and a good base for fast protein analysis in python. The current set of tools are:
 
-Hollow generates fake atoms that identifies voids, pockets, channels and depressions in a protein structure specified in the PDB format. 
+1. `pdbstruct hollow --help` - generates fake atoms to facilitate high resolution display of voids, pockets and channels.
+2. `pdbstruct volume --help` - volume calculator and generator of fake atoms that fill the space.
+3. `pdstruct asa --help` - ASA calculator and saves a PDB/CIF file with ASA in the bfactor column.
 
-There are two effective modes to run this program: an automated mode that explicitly deduces the molecular surface, and a constrained mode that works in a pre-specified volume.
+## Quick install
+
+1. If you have python installed:
+
+    >> pip install -g pdbstruct
+
+2. If you have uv installed:
+
+    >> uv tool install pdbstruct
+
+3. If you have downloaded the package on your computer:
+
+    >> pip install -e .
+
+## Hollow
+
+Hollow was originally developed by Bosco Ho and Franz Gruswitz to solve the problem of displaying protein channels in high resolution. 
+
+There are two effective modes to run Hollow:
+
+1. an automated mode that explicitly deduces the molecular surface
+2. a constrained mode that works in a pre-specified volume.
 
 To see the options, type in the command line: 
   
-    python hollow.py
-  
-The program requires Python 2.4 or higher. 
+    >> pdbstruct hollow --help
 
-Please refer to the website for illustrated tutorials:
+Or for backwards compatibility:
+
+    >> hollow
+  
 Please refer to the [website](https://boscoh.github.io/pdbstruct/) for illustrated tutorials:
 
-  1) The interior pathways of myoglobin:
-       https://boscoh.github.io/pdbstruct/myoglobin.html
-
-  2) The channel surface of a phosphate proin:
-       https://boscoh.github.io/pdbstruct/channel.html
-
+  1) The interior [pathways of myoglobin](https://boscoh.github.io/pdbstruct/myoglobin.html)
+  2) The [channel surface]( https://boscoh.github.io/pdbstruct/channel.html) of a phosphate proin:
+      
 
 ## Automated Surface Detection Mode
 
