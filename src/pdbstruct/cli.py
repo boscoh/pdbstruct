@@ -42,13 +42,13 @@ def cli():
     help="Calculate volume for specific residue number in chain (requires --chain)",
 )
 @click.option(
-    "--skip-waters",
+    "--include-waters",
     default=False,
     is_flag=True,
-    help="Skip water molecules in calculation (default: False)",
+    help="Include water molecules in calculation (default: False)",
 )
 def volume(
-    input_file: str, spacing: float, chain: Optional[str], residue: Optional[int], skip_waters: bool
+    input_file: str, spacing: float, chain: Optional[str], residue: Optional[int], include_waters: bool
 ):
     """
     Calculate the volume of atoms.
@@ -76,7 +76,7 @@ def volume(
         sys.exit(1)
 
     try:
-        calc_volume(input_file, spacing, chain, residue, skip_waters)
+        calc_volume(input_file, spacing, chain, residue, not include_waters)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -92,12 +92,12 @@ def volume(
     help="Number of points on sphere for calculation (default: 960, more = accurate but slower)",
 )
 @click.option(
-    "--skip-waters",
+    "--include-waters",
     default=False,
     is_flag=True,
-    help="Skip water molecules in calculation (default: False)",
+    help="Include water molecules in calculation (default: False)",
 )
-def asa(input_file: str, n_sphere: int, skip_waters: bool):
+def asa(input_file: str, n_sphere: int, include_waters: bool):
     """
     Calculate the accessible-surface-area (ASA) of atoms.
 
@@ -119,7 +119,7 @@ def asa(input_file: str, n_sphere: int, skip_waters: bool):
         sys.exit(1)
 
     try:
-        calc_asa(input_file, n_sphere, skip_waters)
+        calc_asa(input_file, n_sphere, not include_waters)
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
@@ -151,7 +151,7 @@ def asa(input_file: str, n_sphere: int, skip_waters: bool):
     "-p",
     default=1.4,
     type=float,
-    help="Radius of ball to explore cavities (default: 1.4)",
+    help="Radius of ball to explore cavities (default 1.4 Å = 95% x radius of output atom type suggested)",
 )
 @click.option(
     "--surface-probe",

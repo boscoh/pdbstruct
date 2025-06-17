@@ -129,33 +129,3 @@ We also calculate appropriate B-factors of every fake atom, by averaging over th
 
 We developed this program with output designed to be easily viewed and manipulated with PyMol, an open-source protein viewer. By default, the hollow spheres are stored with the "ATOM" field as water oxygen molecules. Pymol can draw the molecular surface of overlapping fake water molecules as it interprets "ATOM" as if the atoms belong to a pseudo polymer.
 
-
-
-## Use in IDLE
-
-Hollow can also be imported as a PYTHON module. This allows hollow to be used in the PYTHON command-line, for example:
-
-
-```python
-import hollow
-hollow.make_hollow_spheres(
-   '1abc.pdb', 
-   output_pdb='hollow.pdb', 
-   grid_spacing=0.1, 
-   constraint_file="my_constraint")
-```
-
-the parameters to the make_hollow_spheres function are:
-
-
-```python
-def make_hollow_spheres(
-    pdb, 
-    out_pdb="",
-    grid_spacing=defaults.grid_spacing,
-    size_interior_probe=defaults.interior_probe,
-    is_skip_waters=defaults.is_skip_waters,
-    size_surface_probe=defaults.surface_probe,
-    constraint_file="", 
-    size_bfactor_probe=defaults.bfactor_probe):
-```

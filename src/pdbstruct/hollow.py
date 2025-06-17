@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import ast
 import math
 import os
 import sys
@@ -14,13 +15,20 @@ from .soup import Soup
 from .spacehash import SpaceHash, vertex_diff_sq
 
 
+class AttrDict(dict):
+    def __getattr__(self, item):
+        try:
+            return self[item]
+        except KeyError:
+            raise AttributeError(item)
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
 def read_parameters(fname):
-    class DataHolder:
-        pass
-    result = DataHolder()
     with open(fname, "r") as f:
-        result.__dict__ = eval(f.read())
-    return result
+        return AttrDict(ast.literal_eval(f.read()))
 
 
 defaults_fname = os.path.join(os.path.dirname(__file__), "hollow.defaults.txt")
@@ -253,7 +261,6 @@ class HollowGrid:
         return soup
 
 
-
 def calculate_average_bfactor(grid_chain, protein_atoms, bfactor_probe):
     max_bfactor = 0.0
     for atom in protein_atoms:
@@ -407,7 +414,9 @@ def make_hollow_spheres(
         get_constraint(soup, atom_indices, constraint_file, grid_spacing)
     )
     grid = HollowGrid(grid_spacing, extent, center)
-    print(f"Grid: {grid.n} x {grid.n} x {grid.n}  Spacing: {grid_spacing:.2f}  Extent: {extent:.2f}")
+    print(
+        f"Grid: {grid.n} x {grid.n} x {grid.n}  Spacing: {grid_spacing:.2f}  Extent: {extent:.2f}"
+    )
 
     print(f"Excluding protein bulk with {interior_probe:.1f} Å probe")
     vertices = []
@@ -468,7 +477,7 @@ def main():
         "--grid-spacing",
         type=float,
         default=defaults.grid_spacing,
-        help=f"Grid spacing (default {defaults.grid_spacing:.2f}; 0.2 for final resolution) Å",
+        help=f"Grid spacing (default {defaults.grid_spacing:.1f}; 0.2 for final resolution) Å",
     )
     @click.option(
         "-c",
@@ -489,7 +498,7 @@ def main():
         "--interior-probe",
         type=float,
         default=defaults.interior_probe,
-        help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.2f} angstroms = 95%% x radius of output atom type suggested)",
+        help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
     )
     @click.option(
         "-s",
