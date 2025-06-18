@@ -398,7 +398,7 @@ def make_hollow_spheres(
     )
     grid = HollowGrid(grid_spacing, extent, center)
     logger.info(
-        f"Grid: {grid.n} x {grid.n} x {grid.n}  Spacing: {grid_spacing:.2f}  Extent: {extent:.2f}"
+        f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {extent:.1f}Å"
     )
 
     logger.info(f"Excluding protein bulk with {interior_probe:.1f} Å probe")

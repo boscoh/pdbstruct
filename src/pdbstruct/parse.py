@@ -519,7 +519,7 @@ def load_soup(
 
     if parser.errors:
         logger.warning(
-            f"Parser encountered {len(parser.errors)} error(s) for {input_file}:"
+            f"Parser encountered {len(parser.errors)} error(s) for `{input_file}`:"
         )
         for error in parser.errors:
             logger.warning(f"- {error}")
