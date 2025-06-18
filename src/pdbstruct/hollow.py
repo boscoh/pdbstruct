@@ -9,14 +9,11 @@ import tqdm
 
 from . import asa, vector3d
 from .bgrid import BoolGrid
-from .util import read_parameters, this_dir
+from .util import read_parameters, this_dir, config
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
 from .vector3d import pos_distance_sq
-
-
-defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
 
 
 class HollowGrid:
@@ -103,7 +100,7 @@ class HollowGrid:
             self.set_drilled(a, b, c, True)
 
     def exclude_edge_to_interior(self):
-        for i in tqdm.trange(self.n):
+        for i in tqdm.trange(self.n, disable=config.is_background):
             for j in range(self.n):
                 self.drill_in_dim(True, i, j, 0)
                 self.drill_in_dim(False, i, j, 0)
@@ -150,7 +147,7 @@ class HollowGrid:
                             self.set_excluded(i, j, k, True)
 
     def exclude_vertices(self, vertices, radii, probe):
-        for i in tqdm.trange(len(vertices)):
+        for i in tqdm.trange(len(vertices), disable=config.is_background):
             self.exclude_sphere(vertices[i], radii[i] + probe)
 
     def exclude_surface(self, vertices, radii, vertex_indices, probe):
@@ -187,7 +184,7 @@ class HollowGrid:
         spacehash = SpaceHash(vertices)
         test_point = [0.0, 0.0, 0.0]
 
-        for i_vertex in tqdm.tqdm(vertex_indices):
+        for i_vertex in tqdm.tqdm(vertex_indices, disable=config.is_background):
             neighbor_indices = spacehash.find_connected_vertex_indices(
                 radii, probe, i_vertex
             )
@@ -363,7 +360,7 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
 
     grid_atom_proxy = grid_soup.get_atom_proxy()
     n_grid_atom = grid_soup.get_atom_count()
-    for i_grid_atom in tqdm.trange(n_grid_atom):
+    for i_grid_atom in tqdm.trange(n_grid_atom, disable=config.is_background):
         grid_atom_proxy.load(i_grid_atom)
         grid_atom_pos = grid_atom_proxy.pos
 
@@ -385,12 +382,12 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
 def make_hollow_spheres(
     input_file,
     output_file="",
-    grid_spacing=defaults.grid_spacing,
-    interior_probe=defaults.interior_probe,
-    is_skip_waters=defaults.is_skip_waters,
-    surface_probe=defaults.surface_probe,
+    grid_spacing=config.grid_spacing,
+    interior_probe=config.interior_probe,
+    is_skip_waters=config.is_skip_waters,
+    surface_probe=config.surface_probe,
     constraint_file="",
-    bfactor_probe=defaults.bfactor_probe,
+    bfactor_probe=config.bfactor_probe,
 ):
     soup = load_soup(input_file, scrub=True)
 
@@ -434,7 +431,7 @@ def make_hollow_spheres(
     grid.exclude_surrounded(hole_size)
 
     # Make hollow spheres from grid-points
-    grid_soup = grid.make_soup(defaults.res_type, defaults.atom_type)
+    grid_soup = grid.make_soup(config.res_type, config.atom_type)
 
     if bfactor_probe:
         print("Averaging nearby protein b-factors for each hollow atom")
@@ -454,21 +451,23 @@ def make_hollow_spheres(
 
 
 def main():
+    config.is_background = False
+
     def validate_positive(ctx, param, value):
         if value is not None and value < 0:
             raise click.BadParameter("Value must be positive.")
         return value
 
-    @click.command()
+    @click.command(no_args_is_help=True)
     @click.version_option()
     @click.argument("input-file", type=click.Path(exists=True))
     @click.option(
         "-g",
         "--grid-spacing",
         type=float,
-        default=defaults.grid_spacing,
+        default=config.grid_spacing,
         callback=validate_positive,
-        help=f"Grid spacing (default {defaults.grid_spacing:.1f}; 0.2 for final resolution) Å",
+        help=f"Grid spacing (default {config.grid_spacing:.1f}; 0.2 for final resolution) Å",
     )
     @click.option(
         "-c",
@@ -488,32 +487,32 @@ def main():
         "-p",
         "--interior-probe",
         type=float,
-        default=defaults.interior_probe,
+        default=config.interior_probe,
         callback=validate_positive,
-        help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
+        help=f"Radius of ball to explore cavities (default {config.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
     )
     @click.option(
         "-s",
         "--surface-probe",
         type=float,
-        default=defaults.surface_probe,
+        default=config.surface_probe,
         callback=validate_positive,
-        help=f"Radius of probe to roll over surface used to define depressions (default {defaults.surface_probe:.2f} angstroms)",
+        help=f"Radius of probe to roll over surface used to define depressions (default {config.surface_probe:.2f} angstroms)",
     )
     @click.option(
         "-w",
         "--include-waters",
         is_flag=True,
-        default=not defaults.is_skip_waters,
+        default=not config.is_skip_waters,
         help="Include water molecules for analysis (default: false)",
     )
     @click.option(
         "-b",
         "--bfactor-probe",
         type=float,
-        default=defaults.bfactor_probe,
+        default=config.bfactor_probe,
         callback=validate_positive,
-        help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={defaults.bfactor_probe:.2f})",
+        help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
     )
     def cli(
         input_file,
@@ -553,10 +552,7 @@ def main():
             bfactor_probe,
         )
 
-    if len(sys.argv) == 1:
-        cli(["--help"])
-    else:
-        cli()
+    cli()
 
 
 if __name__ == "__main__":

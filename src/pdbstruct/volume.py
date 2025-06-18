@@ -11,6 +11,7 @@ from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .vector3d import Vector3d
+from .util import config
 
 
 class VolumeGrid(BoolGrid):
@@ -171,7 +172,7 @@ def calculate_volume_of_atoms(
     # Exclude spheres for each atom
     atom_proxy = soup.get_atom_proxy()
     print("Excluding empty space from grid")
-    for i_atom in tqdm.tqdm(atom_indices):
+    for i_atom in tqdm.tqdm(atom_indices, disable=config.is_background):
         atom_proxy.load(i_atom)
         grid.exclude_sphere(atom_proxy.pos, atom_proxy.radius)
 

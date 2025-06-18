@@ -6,16 +6,22 @@ from typing import Optional
 
 import click
 
+from . import util
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
-from .util import read_parameters, this_dir
+from .util import config
 from .volume import calc_volume
+
+
+config.is_background = False
+
 
 
 def validate_positive(ctx, param, value):
     if value is not None and value < 0:
         raise click.BadParameter("Value must be positive.")
     return value
+
 
 
 @click.group()
@@ -30,7 +36,7 @@ def cli():
     pass
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option(
     "--spacing",
@@ -84,7 +90,7 @@ def volume(
     calc_volume(input_file, spacing, chain, residue, not include_waters)
 
 
-@cli.command()
+@cli.command(no_args_is_help=True)
 @click.argument("input_file", type=click.Path(exists=True))
 @click.option(
     "--n-sphere",
@@ -120,19 +126,16 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     calc_asa(input_file, n_sphere, not include_waters)
 
 
-defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
-
-
-@cli.command()
+@cli.command(no_args_is_help=True)
 @click.version_option()
 @click.argument("input-file", type=click.Path(exists=True))
 @click.option(
     "-g",
     "--grid-spacing",
     type=float,
-    default=defaults.grid_spacing,
+    default=config.grid_spacing,
     callback=validate_positive,
-    help=f"Grid spacing (default {defaults.grid_spacing:.1f}; 0.2 for final resolution) Å",
+    help=f"Grid spacing (default {config.grid_spacing:.1f}; 0.2 for final resolution) Å",
 )
 @click.option(
     "-c",
@@ -152,32 +155,32 @@ defaults = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
     "-p",
     "--interior-probe",
     type=float,
-    default=defaults.interior_probe,
+    default=config.interior_probe,
     callback=validate_positive,
-    help=f"Radius of ball to explore cavities (default {defaults.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
+    help=f"Radius of ball to explore cavities (default {config.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
 )
 @click.option(
     "-s",
     "--surface-probe",
     type=float,
-    default=defaults.surface_probe,
+    default=config.surface_probe,
     callback=validate_positive,
-    help=f"Radius of probe to roll over surface used to define depressions (default {defaults.surface_probe:.2f} angstroms)",
+    help=f"Radius of probe to roll over surface used to define depressions (default {config.surface_probe:.2f} angstroms)",
 )
 @click.option(
     "-w",
     "--include-waters",
     is_flag=True,
-    default=not defaults.is_skip_waters,
+    default=not config.is_skip_waters,
     help="Include water molecules for analysis (default: false)",
 )
 @click.option(
     "-b",
     "--bfactor-probe",
     type=float,
-    default=defaults.bfactor_probe,
+    default=config.bfactor_probe,
     callback=validate_positive,
-    help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={defaults.bfactor_probe:.2f})",
+    help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
 )
 def hollow(
     input_file: str,

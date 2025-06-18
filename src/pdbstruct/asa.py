@@ -10,6 +10,7 @@ from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
 from .vector3d import pos_distance_sq
+from .util import config
 
 __doc__ = """
 Routines to calculate the Accessible Surface Area of a set of atoms.
@@ -93,7 +94,7 @@ def calculate_asa_from_vertices_and_radii(
     # Initialize areas list with zeros for all vertices
     areas = [0.0] * len(vertices)
 
-    for i_vertex in tqdm.trange(len(vertices)):
+    for i_vertex in tqdm.trange(len(vertices), disable=config.is_background):
         neighbor_vertex_indices = spacehash.find_connected_vertex_indices(
             radii, probe, i_vertex
         )

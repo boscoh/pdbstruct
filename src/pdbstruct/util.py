@@ -1,7 +1,6 @@
 import ast
 import os
 
-
 this_dir = os.path.dirname(__file__)
 
 class AttrDict(dict):
@@ -18,3 +17,7 @@ class AttrDict(dict):
 def read_parameters(fname):
     with open(fname, "r") as f:
         return AttrDict(ast.literal_eval(f.read()))
+
+
+config = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
+config.is_background = True
