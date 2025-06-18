@@ -488,7 +488,7 @@ def load_soup(input_file: str, scrub=False, skip_water=False) -> Soup:
     ext = os.path.splitext(input_file)[1].lower()
     if ext in [".cif", ".mmcif"]:
         parser = CifParser(soup, scrub, skip_water)
-    elif ext in [".pdb", ".pdbx"]:
+    elif ext in [".pdb", ".ent"]:
         parser = PdbParser(soup, scrub, skip_water)
     else:
         raise ValueError(f"Unknown file type: {ext}")
@@ -703,7 +703,7 @@ def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] 
     try:
         ext = os.path.splitext(filename)[1].lower()
 
-        if ext == ".cif":
+        if ext in [".cif", ".mmcif"]:
             write_cif(soup, filename, atom_indices)
         elif ext in [".pdb", ".ent"]:
             write_pdb(soup, filename, atom_indices)
