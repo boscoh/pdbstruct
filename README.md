@@ -20,15 +20,11 @@ which is capable of forming a foundation for efficient protein analysis:
 
 ## Quick install
 
-1. If you have python installed:
-
-   `>> pip install -g pdbstruct`
-
-2. If you have [uv](https://docs.astral.sh/uv/) installed:
+1. If you have [uv](https://docs.astral.sh/uv/) installed, then it's a simple global install:
 
    `>> uv tool install pdbstruct`
 
-3. If you have downloaded the package on your computer:
+2. If you have downloaded the package on your computer:
 
    `>> pip install -e .`
 
