@@ -540,14 +540,14 @@ def main():
             hollow protein.pdb --grid-spacing 0.3 --interior-probe 1.2
         """
         make_hollow_spheres(
-            input_file,
-            output_file,
-            grid_spacing,
-            interior_probe,
-            not include_waters,  # Note: inverted logic for is_skip_waters
-            surface_probe,
-            constraint_file,
-            bfactor_probe,
+            input_file=input_file,
+            output_file=output_file,
+            grid_spacing=grid_spacing,
+            interior_probe=interior_probe,
+            is_skip_waters=not include_waters,
+            surface_probe=surface_probe,
+            constraint_file=constraint_file or "",
+            bfactor_probe=bfactor_probe,
         )
 
     cli()
