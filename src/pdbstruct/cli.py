@@ -1,27 +1,22 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import os
 from typing import Optional
 
 import click
 
-from . import util
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
 from .util import config
 from .volume import calc_volume
 
-
 config.is_background = False
-
 
 
 def validate_positive(ctx, param, value):
     if value is not None and value < 0:
         raise click.BadParameter("Value must be positive.")
     return value
-
 
 
 @click.group()
@@ -86,7 +81,9 @@ def volume(
         pdbstruct volume protein.pdb --chain A --residue 100
     """
     if residue is not None and chain is None:
-        raise click.UsageError("Error: --residue option requires --chain to be specified")
+        raise click.UsageError(
+            "Error: --residue option requires --chain to be specified"
+        )
     calc_volume(input_file, spacing, chain, residue, not include_waters)
 
 

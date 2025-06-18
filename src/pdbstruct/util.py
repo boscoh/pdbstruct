@@ -3,6 +3,7 @@ import os
 
 this_dir = os.path.dirname(__file__)
 
+
 class AttrDict(dict):
     def __getattr__(self, item):
         try:

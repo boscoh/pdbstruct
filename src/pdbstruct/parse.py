@@ -708,7 +708,9 @@ def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] 
         elif ext in [".pdb", ".ent"]:
             write_pdb(soup, filename, atom_indices)
         else:
-            raise ValueError(f"Unsupported file extension '{ext}'. Use .pdb, .ent, or .cif")
+            raise ValueError(
+                f"Unsupported file extension '{ext}'. Use .pdb, .ent, or .cif"
+            )
     except (ValueError, IOError):
         # Re-raise these specific exceptions
         raise

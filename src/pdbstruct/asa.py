@@ -157,9 +157,7 @@ def calculate_asa_from_soup(
         vertices.append(atom_proxy.pos.tuple())
         radii.append(atom_proxy.radius)
 
-    return calculate_asa_from_vertices_and_radii(
-        vertices, radii, probe, n_sphere_point
-    )
+    return calculate_asa_from_vertices_and_radii(vertices, radii, probe, n_sphere_point)
 
 
 def calculate_residue_asas(
@@ -258,7 +256,7 @@ def calculate_fraction_buried(
     return fractions
 
 
-def calc_asa(input_file, n_sphere, skip_waters: bool=False):
+def calc_asa(input_file, n_sphere, skip_waters: bool = False):
     """
     Calculate ASA for atoms in a PDB file.
 

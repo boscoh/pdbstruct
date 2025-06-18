@@ -160,4 +160,3 @@ class BoolGrid:
     def flip_all(self):
         """Flip all bits in the grid."""
         self.bits.invert()
-

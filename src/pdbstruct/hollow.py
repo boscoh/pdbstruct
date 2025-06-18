@@ -1,18 +1,16 @@
 #!/usr/bin/env python
 
 import math
-import os
-import sys
 
 import click
 import tqdm
 
 from . import asa, vector3d
 from .bgrid import BoolGrid
-from .util import read_parameters, this_dir, config
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
+from .util import config, read_parameters
 from .vector3d import pos_distance_sq
 
 

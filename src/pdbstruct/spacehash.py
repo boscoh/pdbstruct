@@ -182,7 +182,10 @@ class SpaceHash(object):
             if j_vertex == i_vertex:
                 continue
             r = r0 + radii[j_vertex]
-            if pos_distance_sq(self.vertices[i_vertex], self.vertices[j_vertex]) < r * r:
+            if (
+                pos_distance_sq(self.vertices[i_vertex], self.vertices[j_vertex])
+                < r * r
+            ):
                 result.append(j_vertex)
 
         return result

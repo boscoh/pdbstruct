@@ -272,4 +272,3 @@ class Store:
         for name, _ in self._fields:
             if hasattr(self, name):
                 delattr(self, name)
-
