@@ -4,14 +4,20 @@ import logging
 import math
 
 import click
-import tqdm
 
 from . import asa, vector3d
 from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
-from .util import config, init_console_logging, read_parameters
+from .util import (
+    click_validate_positive,
+    config,
+    init_console_logging,
+    read_parameters,
+    tqdm_iter,
+    tqdm_range,
+)
 from .vector3d import pos_distance_sq
 
 logger = logging.getLogger(__name__)
@@ -101,7 +107,7 @@ class HollowGrid:
             self.set_drilled(a, b, c, True)
 
     def exclude_edge_to_interior(self):
-        for i in tqdm.trange(self.n, disable=config.is_background):
+        for i in tqdm_range(self.n):
             for j in range(self.n):
                 self.drill_in_dim(True, i, j, 0)
                 self.drill_in_dim(False, i, j, 0)
@@ -128,7 +134,7 @@ class HollowGrid:
 
     def exclude_surrounded(self, skip):
         surrounded_grid_points = []
-        for i in range(self.n):
+        for i in tqdm_range(self.n):
             for j in range(self.n):
                 for k in range(self.n):
                     if self.is_surrounded(i, j, k):
@@ -148,7 +154,7 @@ class HollowGrid:
                             self.set_excluded(i, j, k, True)
 
     def exclude_vertices(self, vertices, radii, probe):
-        for i in tqdm.trange(len(vertices), disable=config.is_background):
+        for i in tqdm_range(len(vertices)):
             self.exclude_sphere(vertices[i], radii[i] + probe)
 
     def exclude_surface(self, vertices, radii, vertex_indices, probe):
@@ -185,7 +191,7 @@ class HollowGrid:
         spacehash = SpaceHash(vertices)
         test_point = [0.0, 0.0, 0.0]
 
-        for i_vertex in tqdm.tqdm(vertex_indices, disable=config.is_background):
+        for i_vertex in tqdm_iter(vertex_indices):
             neighbor_indices = spacehash.find_connected_vertex_indices(
                 radii, probe, i_vertex
             )
@@ -361,7 +367,7 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
 
     grid_atom_proxy = grid_soup.get_atom_proxy()
     n_grid_atom = grid_soup.get_atom_count()
-    for i_grid_atom in tqdm.trange(n_grid_atom, disable=config.is_background):
+    for i_grid_atom in tqdm_range(n_grid_atom):
         grid_atom_proxy.load(i_grid_atom)
         grid_atom_pos = grid_atom_proxy.pos
 
@@ -397,9 +403,7 @@ def make_hollow_spheres(
         get_constraint(soup, atom_indices, constraint_file, grid_spacing)
     )
     grid = HollowGrid(grid_spacing, extent, center)
-    logger.info(
-        f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {extent:.1f}Å"
-    )
+    logger.info(f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {extent:.1f}Å")
 
     logger.info(f"Excluding protein bulk with {interior_probe:.1f} Å probe")
     vertices = []
@@ -445,19 +449,15 @@ def make_hollow_spheres(
             pos = atom_proxy.load(i_atom).pos
             atom_proxy.occupancy = 1.0 if inner_constraint_fn(pos) else 0.0
 
+    logger.info("Obtained hollow spheres")
+
     if not output_file:
         output_file = add_suffix_to_basename(input_file, "-hollow")
-    logger.info(f"Hollow spheres written to {output_file}")
     write_soup(grid_soup, output_file)
 
 
 def main():
     init_console_logging()
-
-    def validate_positive(ctx, param, value):
-        if value is not None and value < 0:
-            raise click.BadParameter("Value must be positive.")
-        return value
 
     @click.command(no_args_is_help=True)
     @click.version_option()
@@ -467,7 +467,7 @@ def main():
         "--grid-spacing",
         type=float,
         default=config.grid_spacing,
-        callback=validate_positive,
+        callback=click_validate_positive,
         help=f"Grid spacing (default {config.grid_spacing:.1f}; 0.2 for final resolution) Å",
     )
     @click.option(
@@ -489,7 +489,7 @@ def main():
         "--interior-probe",
         type=float,
         default=config.interior_probe,
-        callback=validate_positive,
+        callback=click_validate_positive,
         help=f"Radius of ball to explore cavities (default {config.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
     )
     @click.option(
@@ -497,7 +497,7 @@ def main():
         "--surface-probe",
         type=float,
         default=config.surface_probe,
-        callback=validate_positive,
+        callback=click_validate_positive,
         help=f"Radius of probe to roll over surface used to define depressions (default {config.surface_probe:.2f} angstroms)",
     )
     @click.option(
@@ -512,7 +512,7 @@ def main():
         "--bfactor-probe",
         type=float,
         default=config.bfactor_probe,
-        callback=validate_positive,
+        callback=click_validate_positive,
         help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
     )
     def cli(

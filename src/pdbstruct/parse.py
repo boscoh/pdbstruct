@@ -5,6 +5,7 @@ import sys
 from typing import Iterable, List, Optional
 
 from .soup import Soup
+from .util import tqdm_iter, tqdm_range
 
 logger = logging.getLogger(__name__)
 
@@ -546,7 +547,7 @@ def write_pdb(
                 except Exception as e:
                     errors.append(f"Error writing title: {str(e)}")
 
-            for i_atom in soup.get_atom_indices(atom_indices):
+            for i_atom in tqdm_iter(soup.get_atom_indices(atom_indices)):
                 try:
                     atom_proxy.load(i_atom)
                     residue_proxy.load(atom_proxy.i_res)
@@ -634,7 +635,7 @@ def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] =
             entity_id = 1
             current_chain = None
 
-            for i_atom in soup.get_atom_indices(atom_indices):
+            for i_atom in tqdm_iter(soup.get_atom_indices(atom_indices)):
                 try:
                     atom_proxy.load(i_atom)
                     residue_proxy.load(atom_proxy.i_res)
@@ -715,6 +716,7 @@ def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] 
     try:
         ext = os.path.splitext(filename)[1].lower()
 
+        logger.info(f"Writing {filename}")
         if ext in [".cif", ".mmcif"]:
             write_cif(soup, filename, atom_indices)
         elif ext in [".pdb", ".ent"]:

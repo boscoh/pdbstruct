@@ -3,6 +3,9 @@ import logging
 import os
 import sys
 
+import click
+import tqdm
+
 this_dir = os.path.dirname(__file__)
 
 
@@ -31,3 +34,17 @@ def init_console_logging():
         stream=sys.stdout, level=logging.INFO, format="%(levelname)s: %(message)s"
     )
     config.is_background = False
+
+
+def click_validate_positive(ctx, param, value):
+    if value is not None and value < 0:
+        raise click.BadParameter("Value must be positive.")
+    return value
+
+
+def tqdm_range(*args):
+    return tqdm.trange(*args, disable=config.is_background)
+
+
+def tqdm_iter(*args):
+    return tqdm.tqdm(*args, disable=config.is_background)

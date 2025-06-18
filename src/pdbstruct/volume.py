@@ -6,12 +6,10 @@ import math
 import sys
 from typing import List, Tuple
 
-import tqdm
-
 from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
-from .util import config
+from .util import tqdm_iter, tqdm_range
 from .vector3d import Vector3d
 
 logger = logging.getLogger(__name__)
@@ -115,7 +113,7 @@ class VolumeGrid(BoolGrid):
             element = "O"  # Default to oxygen
 
         i_res = 1
-        for i in range(self.n):
+        for i in tqdm_range(self.n):
             for j in range(self.n):
                 for k in range(self.n):
                     if self.is_set(i, j, k):  # If grid point is excluded
@@ -169,18 +167,22 @@ def calculate_volume_of_atoms(
     # Exclude spheres for each atom
     atom_proxy = soup.get_atom_proxy()
     logger.info("Excluding empty space from grid")
-    for i_atom in tqdm.tqdm(atom_indices, disable=config.is_background):
+    for i_atom in tqdm_iter(atom_indices):
         atom_proxy.load(i_atom)
         grid.exclude_sphere(atom_proxy.pos, atom_proxy.radius)
 
-    # Calculate volume
-    d_volume = float(grid_spacing) ** 3
-    n_excluded = grid.n_excluded()
-    volume = n_excluded * d_volume
+    logger.info("Counting volume voxels")
+    n_voxel = 0
+    for i in tqdm_range(grid.n**3):
+        if grid.bits[i]:
+            n_voxel += 1
+    n_voxel = grid.n_excluded()
+    volume_voxel = float(grid_spacing) ** 3
+    volume = n_voxel * volume_voxel
     logger.info(f"Volume: {volume:.2f} Å³")
 
     if out_fname:
-        logger.info(f"Writing {out_fname}")
+        logger.info("Generating volume atoms")
         grid_soup = grid.make_soup("HOH", "O")
         write_soup(grid_soup, out_fname)
 

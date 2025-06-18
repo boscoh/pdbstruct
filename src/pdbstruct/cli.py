@@ -8,18 +8,10 @@ import click
 
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
-from .util import config, init_console_logging
+from .util import click_validate_positive, config, init_console_logging
 from .volume import calc_volume
 
 logger = logging.getLogger(__name__)
-
-config.is_background = False
-
-
-def validate_positive(ctx, param, value):
-    if value is not None and value < 0:
-        raise click.BadParameter("Value must be positive.")
-    return value
 
 
 @click.group()
@@ -31,7 +23,6 @@ def cli():
     (c) 2025 Bosco Ho & Franz Gruswitz.
 
     """
-
     init_console_logging()
 
 
@@ -42,7 +33,7 @@ def cli():
     "-s",
     default=0.5,
     type=float,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help="Grid spacing in Angstroms (default: 0.5, smaller = more accurate but slower)",
 )
 @click.option(
@@ -98,7 +89,7 @@ def volume(
     "-n",
     default=960,
     type=int,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help="Number of points on sphere for calculation (default: 960, more = accurate but slower)",
 )
 @click.option(
@@ -135,7 +126,7 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     "--grid-spacing",
     type=float,
     default=config.grid_spacing,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help=f"Grid spacing (default {config.grid_spacing:.1f}; 0.2 for final resolution) Å",
 )
 @click.option(
@@ -157,7 +148,7 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     "--interior-probe",
     type=float,
     default=config.interior_probe,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help=f"Radius of ball to explore cavities (default {config.interior_probe:.1f} Å = 95% x radius of output atom type suggested)",
 )
 @click.option(
@@ -165,7 +156,7 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     "--surface-probe",
     type=float,
     default=config.surface_probe,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help=f"Radius of probe to roll over surface used to define depressions (default {config.surface_probe:.2f} angstroms)",
 )
 @click.option(
@@ -180,7 +171,7 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     "--bfactor-probe",
     type=float,
     default=config.bfactor_probe,
-    callback=validate_positive,
+    callback=click_validate_positive,
     help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
 )
 def hollow(

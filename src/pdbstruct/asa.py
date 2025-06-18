@@ -4,12 +4,10 @@ import logging
 import math
 from typing import List, Optional, Set, Tuple
 
-import tqdm
-
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
-from .util import config
+from .util import tqdm_range
 from .vector3d import pos_distance_sq
 
 logger = logging.getLogger(__name__)
@@ -96,7 +94,7 @@ def calculate_asa_from_vertices_and_radii(
     # Initialize areas list with zeros for all vertices
     areas = [0.0] * len(vertices)
 
-    for i_vertex in tqdm.trange(len(vertices), disable=config.is_background):
+    for i_vertex in tqdm_range(len(vertices)):
         neighbor_vertex_indices = spacehash.find_connected_vertex_indices(
             radii, probe, i_vertex
         )
@@ -284,12 +282,13 @@ def calc_asa(input_file, n_sphere, skip_waters: bool = False):
     total_asa = sum(atom_asas)
     logger.info(f"Total ASA: {total_asa:.1f} Å²")
 
-    output_file = add_suffix_to_basename(input_file, "-asa")
-    logger.info(f"Writing ASA as atom bfactors to {output_file}")
+    logger.info("Setting ASA to atom bfactors")
     all_atom_asas = [0.0] * soup.get_atom_count()
     for i_atom, asa in zip(atom_indices, atom_asas):
         all_atom_asas[i_atom] = asa
     soup.set_atom_bfactors(all_atom_asas)
+
+    output_file = add_suffix_to_basename(input_file, "-asa")
     write_soup(soup, output_file, atom_indices=atom_indices)
 
     return atom_asas
