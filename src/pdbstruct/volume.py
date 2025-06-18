@@ -176,7 +176,6 @@ def calculate_volume_of_atoms(
     for i in tqdm_range(grid.n**3):
         if grid.bits[i]:
             n_voxel += 1
-    n_voxel = grid.n_excluded()
     volume_voxel = float(grid_spacing) ** 3
     volume = n_voxel * volume_voxel
     logger.info(f"Volume: {volume:.2f} Å³")

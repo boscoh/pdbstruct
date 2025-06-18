@@ -710,6 +710,8 @@ class Soup:
                 i_atom for i_atom in atom_indices if res_type(i_atom) != "HOH"
             ]
             n_water = self.get_atom_count() - len(atom_indices)
-            logger.info(f"Skipping {n_water} water atoms -> {len(atom_indices)} atoms remain")
+            logger.info(
+                f"Skipping {n_water} water atoms -> {len(atom_indices)} atoms remain"
+            )
 
         return atom_indices

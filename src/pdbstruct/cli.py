@@ -174,6 +174,13 @@ def asa(input_file: str, n_sphere: int, include_waters: bool):
     callback=click_validate_positive,
     help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
 )
+@click.option(
+    "--pymol",
+    type=bool,
+    default=False,
+    is_flag=True,
+    help="Show hollow spheres in pymol (if found)",
+)
 def hollow(
     input_file: str,
     output_file: Optional[str],
@@ -183,6 +190,7 @@ def hollow(
     interior_probe: float,
     constraint_file: Optional[str],
     bfactor_probe: float,
+    pymol: bool,
 ):
     """
     Generate spheres to fill voids, pockets and channels.
@@ -208,6 +216,7 @@ def hollow(
         surface_probe=surface_probe,
         constraint_file=constraint_file or "",
         bfactor_probe=bfactor_probe,
+        show_pymol=pymol,
     )
 
 

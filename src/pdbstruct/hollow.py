@@ -2,6 +2,9 @@
 
 import logging
 import math
+import os
+import shutil
+import textwrap
 
 import click
 
@@ -386,6 +389,46 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
             grid_atom_proxy.bfactor = sum(bfactors) / float(n_bfactor)
 
 
+def pymol(input_file, output_file):
+    input_basename = os.path.basename(input_file)
+    output_basename = os.path.basename(output_file)
+
+    output_base = os.path.basename(output_file).split(".")[0]
+    color = "orange"
+    template = textwrap.dedent(
+        f"""
+        load {input_basename}
+        load {output_basename}
+        
+        select hollow, {output_base} and q > 0
+        
+        color {color}, hollow
+
+        set sphere_quality, 2
+        show sphere, hollow
+
+        show surface, hollow and q>0
+        set transparency, 0.5        
+                
+        select lining, byres hollow around 5
+        show sticks, lining
+        
+        # cartoon tube
+        
+        deselect
+        """
+    )
+
+    name, ext = os.path.splitext(input_file)
+    pml = f"{name}.pml"
+    open(pml, "w").write(template)
+    cmd = f"pymol {pml}"
+    logger.info(f"Pymol script: `{cmd}`")
+
+    if shutil.which("pymol"):
+        os.system(cmd)
+
+
 def make_hollow_spheres(
     input_file,
     output_file="",
@@ -395,6 +438,7 @@ def make_hollow_spheres(
     surface_probe=config.surface_probe,
     constraint_file="",
     bfactor_probe=config.bfactor_probe,
+    show_pymol=False,
 ):
     soup = load_soup(input_file, scrub=True)
 
@@ -454,6 +498,9 @@ def make_hollow_spheres(
     if not output_file:
         output_file = add_suffix_to_basename(input_file, "-hollow")
     write_soup(grid_soup, output_file)
+
+    if show_pymol:
+        pymol(input_file, output_file)
 
 
 def main():
@@ -515,6 +562,13 @@ def main():
         callback=click_validate_positive,
         help=f"Radius around a grid point, in which the b-factors of heavy atoms are averaged (0.0=off; suggested=4.0; default={config.bfactor_probe:.2f})",
     )
+    @click.option(
+        "--pymol",
+        type=bool,
+        default=False,
+        is_flag=True,
+        help="Show hollow spheres in pymol (if found)"
+    )
     def cli(
         input_file,
         grid_spacing,
@@ -524,6 +578,7 @@ def main():
         surface_probe,
         include_waters,
         bfactor_probe,
+            pymol,
     ):
         """
         Hollow (c) 2025 Bosco Ho & Franz Gruswitz.
@@ -551,6 +606,7 @@ def main():
             surface_probe=surface_probe,
             constraint_file=constraint_file or "",
             bfactor_probe=bfactor_probe,
+            show_pymol=pymol,
         )
 
     cli()
