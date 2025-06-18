@@ -24,7 +24,11 @@ which is capable of forming a foundation for efficient protein analysis:
 
    `>> uv tool install pdbstruct`
 
-2. If you have downloaded the package on your computer:
+2. Another alternative is use [pipx](https://github.com/pypa/pipx)
+
+   `>> pipx install pdbstruct`
+
+3. If you have downloaded the package on your computer and setup a `venv`:
 
    `>> pip install -e .`
 
