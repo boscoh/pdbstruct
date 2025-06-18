@@ -507,9 +507,9 @@ def load_soup(
     except IOError as e:
         raise IOError(f"Could not read file {input_file}: {e}")
 
-    pdb_id = os.path.splitext(os.path.basename(input_file))[0]
+    structure_id = os.path.splitext(os.path.basename(input_file))[0]
 
-    parser.parse_text(content, pdb_id)
+    parser.parse_text(content, structure_id)
 
     if soup.is_empty():
         if die_if_empty:
