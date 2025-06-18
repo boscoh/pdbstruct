@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import math
 
 import click
@@ -10,8 +11,10 @@ from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
-from .util import config, read_parameters
+from .util import config, init_console_logging, read_parameters
 from .vector3d import pos_distance_sq
+
+logger = logging.getLogger(__name__)
 
 
 class HollowGrid:
@@ -292,7 +295,7 @@ def get_constraint(soup, atom_indices, constraint_file, grid_spacing):
         center = soup.get_center(atom_indices)
         extent = soup.get_extent_from_center(center, atom_indices)
     else:
-        print("Loading constraints from %s" % constraint_file)
+        logger.info(f"Loading constraints from {constraint_file}")
         constraints = read_parameters(constraint_file)
 
         if not constraints.remove_asa_shell:
@@ -394,11 +397,11 @@ def make_hollow_spheres(
         get_constraint(soup, atom_indices, constraint_file, grid_spacing)
     )
     grid = HollowGrid(grid_spacing, extent, center)
-    print(
+    logger.info(
         f"Grid: {grid.n} x {grid.n} x {grid.n}  Spacing: {grid_spacing:.2f}  Extent: {extent:.2f}"
     )
 
-    print(f"Excluding protein bulk with {interior_probe:.1f} Å probe")
+    logger.info(f"Excluding protein bulk with {interior_probe:.1f} Å probe")
     vertices = []
     radii = []
     atom_proxy = soup.get_atom_proxy()
@@ -409,22 +412,22 @@ def make_hollow_spheres(
     grid.exclude_vertices(vertices, radii, interior_probe)
 
     if constraint_file:
-        print("Excluding exterior of constraint")
+        logger.info("Excluding exterior of constraint")
         grid.exclude_points_in_constraint(constraint_fn)
 
     if is_calculate_asa_shell:
         # Roll large ball over surface residues, then drill in from the edge
-        print("Identifying surface atoms using ASA with 1.4 Å probe")
+        logger.info("Identifying surface atoms using ASA with 1.4 Å probe")
         atom_asas = asa.calculate_asa_from_soup(soup, 1.4, atom_indices=atom_indices)
         surface_vertex_indices = [i for i, a in enumerate(atom_asas) if a >= 9]
 
-        print(f"Excluding surface shell with {surface_probe:.1f} Å probe")
+        logger.info(f"Excluding surface shell with {surface_probe:.1f} Å probe")
         grid.exclude_surface(vertices, radii, surface_vertex_indices, surface_probe)
 
-        print("Expansion of exclusion to edge")
+        logger.info("Expansion of exclusion to edge")
         grid.exclude_edge_to_interior()
 
-    print("Excluding encased grid points")
+    logger.info("Excluding encased grid points")
     hole_size = int(1.5 * 1.4 / grid_spacing)
     grid.exclude_surrounded(hole_size)
 
@@ -432,11 +435,11 @@ def make_hollow_spheres(
     grid_soup = grid.make_soup(config.res_type, config.atom_type)
 
     if bfactor_probe:
-        print("Averaging nearby protein b-factors for each hollow atom")
+        logger.info("Averaging nearby protein b-factors for each hollow atom")
         calc_average_bfactor_soup(grid_soup, soup, bfactor_probe)
 
     if constraint_file:
-        print("Setting occupancy to 0 if outside constraint")
+        logger.info("Setting occupancy to 0 if outside constraint")
         atom_proxy = grid_soup.get_atom_proxy()
         for i_atom in range(grid_soup.get_atom_count()):
             pos = atom_proxy.load(i_atom).pos
@@ -444,12 +447,12 @@ def make_hollow_spheres(
 
     if not output_file:
         output_file = add_suffix_to_basename(input_file, "-hollow")
-    print("Hollow spheres written to", output_file)
+    logger.info(f"Hollow spheres written to {output_file}")
     write_soup(grid_soup, output_file)
 
 
 def main():
-    config.is_background = False
+    init_console_logging()
 
     def validate_positive(ctx, param, value):
         if value is not None and value < 0:

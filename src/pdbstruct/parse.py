@@ -1,8 +1,12 @@
+import logging
 import os
 import re
+import sys
 from typing import Iterable, List, Optional
 
 from .soup import Soup
+
+logger = logging.getLogger(__name__)
 
 
 def delete_numbers(text: str) -> str:
@@ -118,41 +122,41 @@ class PdbParser:
                     occupancy = float(line[54:60])
                     bfactor = float(line[60:66])
                     elem = line[76:78].strip()
-                except (ValueError, IndexError) as e:
+
+                    if elem == "":
+                        elem = delete_numbers(atom_type.strip())[:1]
+
+                    if self.scrub:
+                        if alt not in ["", " ", "A", "a"]:
+                            continue
+                        if model > 1:
+                            continue
+
+                    if self.skip_water:
+                        if res_type == "HOH":
+                            continue
+
+                    self.soup.add_atom(
+                        x=x,
+                        y=y,
+                        z=z,
+                        bfactor=bfactor,
+                        alt=alt,
+                        atom_type=atom_type,
+                        elem=elem,
+                        res_type=res_type,
+                        res_num=res_num,
+                        ins_code=ins_code,
+                        chain=chain,
+                        occupancy=occupancy,
+                        model=model,
+                    )
+                except Exception as e:
                     error_msg = (
                         f"PDB parse error at line {i_line + 1}: {str(e)} - '{line}'"
                     )
                     self.errors.append(error_msg)
                     continue
-
-                if elem == "":
-                    elem = delete_numbers(atom_type.strip())[:1]
-
-                if self.scrub:
-                    if alt not in ["", " ", "A", "a"]:
-                        continue
-                    if model > 1:
-                        continue
-
-                if self.skip_water:
-                    if res_type == "HOH":
-                        continue
-
-                self.soup.add_atom(
-                    x=x,
-                    y=y,
-                    z=z,
-                    bfactor=bfactor,
-                    alt=alt,
-                    atom_type=atom_type,
-                    elem=elem,
-                    res_type=res_type,
-                    res_num=res_num,
-                    ins_code=ins_code,
-                    chain=chain,
-                    occupancy=occupancy,
-                    model=model,
-                )
 
     def parse_secondary_structure_lines(self, pdb_lines: List[str]) -> None:
         self.soup.assign_residue_properties(self.soup.i_structure)
@@ -349,41 +353,41 @@ class CifParser:
 
                     model = get_token("pdbx_PDB_model_num", 1, int)
 
-                except (ValueError, IndexError) as e:
+                    if elem == "":
+                        elem = delete_numbers(atom_type.strip())[:1]
+
+                    if self.scrub:
+                        if alt not in ["", " ", "A", "a"]:
+                            continue
+                        if model > 1:
+                            continue
+
+                    if self.skip_water:
+                        if res_type == "HOH":
+                            continue
+
+                    self.soup.add_atom(
+                        x=x,
+                        y=y,
+                        z=z,
+                        bfactor=bfactor,
+                        alt=alt,
+                        atom_type=atom_type,
+                        elem=elem,
+                        res_type=res_type,
+                        res_num=res_num,
+                        ins_code=ins_code,
+                        chain=chain,
+                        occupancy=occupancy,
+                        model=model,
+                    )
+
+                except Exception as e:
                     error_msg = (
                         f"CIF parse error at line {i_line + 1}: {str(e)} - '{line}'"
                     )
                     self.errors.append(error_msg)
                     continue
-
-                if elem == "":
-                    elem = delete_numbers(atom_type.strip())[:1]
-
-                if self.scrub:
-                    if alt not in ["", " ", "A", "a"]:
-                        continue
-                    if model > 1:
-                        continue
-
-                if self.skip_water:
-                    if res_type == "HOH":
-                        continue
-
-                self.soup.add_atom(
-                    x=x,
-                    y=y,
-                    z=z,
-                    bfactor=bfactor,
-                    alt=alt,
-                    atom_type=atom_type,
-                    elem=elem,
-                    res_type=res_type,
-                    res_num=res_num,
-                    ins_code=ins_code,
-                    chain=chain,
-                    occupancy=occupancy,
-                    model=model,
-                )
 
     def parse_secondary_structure_lines(self, pdb_lines: List[str]) -> None:
         self.has_secondary_structure = False
@@ -480,7 +484,9 @@ class CifParser:
         self.parse_secondary_structure_lines(lines)
 
 
-def load_soup(input_file: str, scrub=False, skip_water=False) -> Soup:
+def load_soup(
+    input_file: str, scrub=False, skip_water=False, die_if_empty=True
+) -> Soup:
     """Load structure from PDB or CIF file."""
     soup = Soup()
 
@@ -504,15 +510,21 @@ def load_soup(input_file: str, scrub=False, skip_water=False) -> Soup:
 
     parser.parse_text(content, pdb_id)
 
-    if parser.errors:
-        print(f"Warning: Parser encountered {len(parser.errors)} error(s):")
-        for error in parser.errors:
-            print(f"  - {error}")
-
     if soup.is_empty():
-        raise ValueError(f"No atoms found in input file {input_file}")
+        if die_if_empty:
+            logger.error(f"No atoms found in {input_file}")
+            sys.exit(1)
+        else:
+            parser.errors.append("No atoms found")
 
-    print(
+    if parser.errors:
+        logger.warning(
+            f"Parser encountered {len(parser.errors)} error(s) for {input_file}:"
+        )
+        for error in parser.errors:
+            logger.warning(f"- {error}")
+
+    logger.info(
         f"Loaded {soup.get_atom_count()} atoms in {soup.get_residue_count()} residues from `{input_file}`"
     )
 
@@ -570,9 +582,9 @@ def write_pdb(
         raise IOError(f"Could not write to file {filename}: {e}")
 
     if errors:
-        print(f"Warning: PDB writer encountered {len(errors)} error(s):")
+        logger.warning(f"PDB writer encountered {len(errors)} error(s):")
         for error in errors:
-            print(f"  - {error}")
+            logger.warning(f"  - {error}")
 
 
 def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):
@@ -682,9 +694,9 @@ def write_cif(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] =
         raise IOError(f"Could not write to file {filename}: {e}")
 
     if errors:
-        print(f"Warning: CIF writer encountered {len(errors)} error(s):")
+        logger.warning(f"CIF writer encountered {len(errors)} error(s):")
         for error in errors:
-            print(f"  - {error}")
+            logger.warning(f"  - {error}")
 
 
 def write_soup(soup: Soup, filename: str, atom_indices: Optional[Iterable[int]] = None):

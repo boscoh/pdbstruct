@@ -1,7 +1,10 @@
+import logging
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
 from .store import Store
 from .vector3d import Vector3d, pos_distance
+
+logger = logging.getLogger(__name__)
 
 radius_by_elem = {
     "H": 1.20,
@@ -707,6 +710,5 @@ class Soup:
                 i_atom for i_atom in atom_indices if res_type(i_atom) != "HOH"
             ]
             n_water = self.get_atom_count() - len(atom_indices)
-            print(f"Skipping {n_water} water atoms -> {len(atom_indices)} atoms")
 
         return atom_indices

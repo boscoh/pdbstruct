@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+import logging
 import math
-import sys
 from typing import List, Optional, Set, Tuple
 
 import tqdm
@@ -9,8 +9,10 @@ import tqdm
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
 from .spacehash import SpaceHash
-from .vector3d import pos_distance_sq
 from .util import config
+from .vector3d import pos_distance_sq
+
+logger = logging.getLogger(__name__)
 
 __doc__ = """
 Routines to calculate the Accessible Surface Area of a set of atoms.
@@ -268,13 +270,9 @@ def calc_asa(input_file, n_sphere, skip_waters: bool = False):
     """
     soup = load_soup(input_file, scrub=True)
 
-    if soup.is_empty():
-        print("Error: No atoms found in input file")
-        sys.exit(1)
-
     atom_indices = soup.get_atom_indices(skip_waters=skip_waters)
 
-    print("Calculating ASA of atoms")
+    logger.info("Calculating ASA of atoms")
     atom_asas = calculate_asa_from_soup(
         soup,
         probe=1.4,
@@ -284,10 +282,10 @@ def calc_asa(input_file, n_sphere, skip_waters: bool = False):
 
     # Calculate total ASA only for selected atoms or all atoms
     total_asa = sum(atom_asas)
-    print(f"Total ASA: {total_asa:.1f} Å²")
+    logger.info(f"Total ASA: {total_asa:.1f} Å²")
 
     output_file = add_suffix_to_basename(input_file, "-asa")
-    print(f"Writing ASA as atom bfactors to {output_file}")
+    logger.info(f"Writing ASA as atom bfactors to {output_file}")
     all_atom_asas = [0.0] * soup.get_atom_count()
     for i_atom, asa in zip(atom_indices, atom_asas):
         all_atom_asas[i_atom] = asa

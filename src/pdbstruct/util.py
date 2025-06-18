@@ -1,5 +1,7 @@
 import ast
+import logging
 import os
+import sys
 
 this_dir = os.path.dirname(__file__)
 
@@ -22,3 +24,10 @@ def read_parameters(fname):
 
 config = read_parameters(os.path.join(this_dir, "hollow.defaults.txt"))
 config.is_background = True
+
+
+def init_console_logging():
+    logging.basicConfig(
+        stream=sys.stdout, level=logging.INFO, format="%(levelname)s: %(message)s"
+    )
+    config.is_background = False

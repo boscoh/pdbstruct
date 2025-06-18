@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 import math
 import sys
 from typing import List, Tuple
@@ -10,8 +11,10 @@ import tqdm
 from .bgrid import BoolGrid
 from .parse import add_suffix_to_basename, load_soup, write_soup
 from .soup import Soup
-from .vector3d import Vector3d
 from .util import config
+from .vector3d import Vector3d
+
+logger = logging.getLogger(__name__)
 
 
 class VolumeGrid(BoolGrid):
@@ -140,7 +143,7 @@ def calculate_volume_of_atoms(
     atom_indices: List[int],
     grid_spacing: float = 0.5,
     out_fname: str = "",
-) -> Tuple[float, int]:
+) -> float:
     """
     Calculate the volume of atoms in a Soup using grid-based method.
 
@@ -153,25 +156,19 @@ def calculate_volume_of_atoms(
     Returns:
         Tuple of (volume in Å³, number of excluded grid points)
     """
-    if soup.is_empty():
-        print("Warning: Soup is empty, volume = 0")
-        return 0.0, 0
-
-    if not atom_indices:
-        print("Warning: No atoms selected, volume = 0")
-        return 0.0, 0
-
     # Calculate center and width
     center = soup.get_center()
     extent = soup.get_extent_from_center(center, atom_indices)
 
     # Create grid
     grid = VolumeGrid(grid_spacing, extent, center)
-    print(f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {grid.actual_width:.1f}Å")
+    logger.info(
+        f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {grid.actual_width:.1f}Å"
+    )
 
     # Exclude spheres for each atom
     atom_proxy = soup.get_atom_proxy()
-    print("Excluding empty space from grid")
+    logger.info("Excluding empty space from grid")
     for i_atom in tqdm.tqdm(atom_indices, disable=config.is_background):
         atom_proxy.load(i_atom)
         grid.exclude_sphere(atom_proxy.pos, atom_proxy.radius)
@@ -180,10 +177,10 @@ def calculate_volume_of_atoms(
     d_volume = float(grid_spacing) ** 3
     n_excluded = grid.n_excluded()
     volume = n_excluded * d_volume
-    print(f"Volume: {volume:.2f} Å³")
+    logger.info(f"Volume: {volume:.2f} Å³")
 
     if out_fname:
-        print(f"Writing {out_fname}")
+        logger.info(f"Writing {out_fname}")
         grid_soup = grid.make_soup("HOH", "O")
         write_soup(grid_soup, out_fname)
 
@@ -211,7 +208,7 @@ def calculate_volume_by_residue(
     residue_proxy = soup.get_residue_proxy(i_res)
     atom_indices = residue_proxy.get_atom_indices()
 
-    print(
+    logger.info(
         f"Calculating volume for residue {residue_proxy.res_type} {residue_proxy.res_num} "
         f"chain {residue_proxy.chain} ({len(atom_indices)} atoms)"
     )
@@ -243,10 +240,10 @@ def calculate_volume_by_chain(
             atom_indices.extend(residue_proxy.get_atom_indices())
 
     if not atom_indices:
-        print(f"Warning: No atoms found in chain {chain}")
-        return 0.0, 0
+        logger.warning(f"No atoms found in chain {chain}")
+        return 0.0
 
-    print(f"Calculating volume for chain {chain} ({len(atom_indices)} atoms)")
+    logger.info(f"Calculating volume for chain {chain} ({len(atom_indices)} atoms)")
 
     return calculate_volume_of_atoms(soup, atom_indices, grid_spacing, out_fname)
 
@@ -271,7 +268,7 @@ def calc_volume(
                 break
 
         if target_res_index is None:
-            print(f"Error: Residue {target_res_num} not found in chain {target_chain}")
+            logger.error(f"Residue {target_res_num} not found in chain {target_chain}")
             sys.exit(1)
 
         out_fname = add_suffix_to_basename(

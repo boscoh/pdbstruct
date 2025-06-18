@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 from typing import Optional
 
 import click
 
 from .asa import calc_asa
 from .hollow import make_hollow_spheres
-from .util import config
+from .util import config, init_console_logging
 from .volume import calc_volume
+
+logger = logging.getLogger(__name__)
 
 config.is_background = False
 
@@ -28,7 +31,8 @@ def cli():
     (c) 2025 Bosco Ho & Franz Gruswitz.
 
     """
-    pass
+
+    init_console_logging()
 
 
 @cli.command(no_args_is_help=True)
