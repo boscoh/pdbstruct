@@ -5,9 +5,9 @@
 
 `pdbstruct` provides a set of tools for fast protein analysis in python. Current tools:
 
-1. `pdbstruct hollow --help` - generates fake atoms to facilitate high resolution display of voids, pockets and channels.
-2. `pdbstruct volume --help` - volume calculator and generator of fake atoms that fill the space.
-3. `pdstruct asa --help` - ASA calculator and saves a PDB/CIF file with ASA in the bfactor column.
+1. `pdbstruct hollow` or `hollow` - generates hollow atoms to facilitate hi-res display of voids, pockets and channels.
+2. `pdbstruct volume` - volume calculator and generator of fake atoms that fill the space.
+3. `pdstruct asa` - ASA calculator and saves a PDB/CIF file with ASA in the bfactor column.
 
 This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package,
 which is capable of forming a foundation for efficient protein analysis:
@@ -20,17 +20,17 @@ which is capable of forming a foundation for efficient protein analysis:
 
 ## Quick install
 
-1. If you have [uv](https://docs.astral.sh/uv/) installed, then it's a simple global install:
+1. If you have [uv](https://docs.astral.sh/uv/) installed, then for a global install:
 
-   `>> uv tool install pdbstruct`
+   `>> uv tool install pdbstruct@latest`
 
-2. Another alternative is use [pipx](https://github.com/pypa/pipx)
+2. Another alternative is to use [pipx](https://github.com/pypa/pipx)
 
    `>> pipx install pdbstruct`
 
-3. If you have downloaded the package on your computer and setup a `venv`:
+3. If you have a [venv](https://docs.python.org/3/library/venv.html) python environment setup, then:
 
-   `>> pip install -e .`
+   `>> pip install pdbstruct`
 
 ## Hollow
 
