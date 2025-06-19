@@ -390,10 +390,11 @@ def calc_average_bfactor_soup(grid_soup, soup, bfactor_probe):
 
 
 def pymol(input_file, output_file):
+    input_dir = os.path.dirname(input_file)
     input_basename = os.path.basename(input_file)
     output_basename = os.path.basename(output_file)
 
-    output_base = os.path.basename(output_file).split(".")[0]
+    output_base = os.path.splitext(output_basename)[0]
     color = "orange"
     template = textwrap.dedent(
         f"""
@@ -422,10 +423,10 @@ def pymol(input_file, output_file):
     name, ext = os.path.splitext(input_file)
     pml = f"{name}.pml"
     open(pml, "w").write(template)
-    cmd = f"pymol {pml}"
-    logger.info(f"Pymol script: `{cmd}`")
 
     if shutil.which("pymol"):
+        cmd = f"cd {input_dir}; pymol {os.path.basename(pml)}"
+        logger.info(f"Pymol script: `{cmd}`")
         os.system(cmd)
 
 
@@ -450,13 +451,7 @@ def make_hollow_spheres(
     logger.info(f"Grid: {grid.n}³;  {grid.n} x {grid_spacing}Å = {extent:.1f}Å")
 
     logger.info(f"Excluding protein bulk with {interior_probe:.1f} Å probe")
-    vertices = []
-    radii = []
-    atom_proxy = soup.get_atom_proxy()
-    for i_atom in atom_indices:
-        atom_proxy.load(i_atom)
-        vertices.append(atom_proxy.pos.tuple())
-        radii.append(atom_proxy.radius)
+    vertices, radii = soup.get_vertices_and_radii(atom_indices)
     grid.exclude_vertices(vertices, radii, interior_probe)
 
     if constraint_file:

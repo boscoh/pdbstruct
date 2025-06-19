@@ -715,3 +715,13 @@ class Soup:
             )
 
         return atom_indices
+
+    def get_vertices_and_radii(self, atom_indices: List[int]) -> (List[Tuple], List[float]):
+        vertices = []
+        radii = []
+        atom_proxy = self.get_atom_proxy()
+        for i_atom in atom_indices:
+            atom_proxy.load(i_atom)
+            vertices.append(atom_proxy.pos.tuple())
+            radii.append(atom_proxy.radius)
+        return vertices, radii

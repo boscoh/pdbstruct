@@ -512,11 +512,7 @@ def load_soup(
     parser.parse_text(content, structure_id)
 
     if soup.is_empty():
-        if die_if_empty:
-            logger.error(f"No atoms found in {input_file}")
-            sys.exit(1)
-        else:
-            parser.errors.append("No atoms found")
+        parser.errors.append("No atoms found")
 
     if parser.errors:
         logger.warning(

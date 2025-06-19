@@ -149,14 +149,7 @@ def calculate_asa_from_soup(
     if atom_indices is None:
         atom_indices = range(soup.get_atom_count())
 
-    vertices = []
-    radii = []
-    atom_proxy = soup.get_atom_proxy()
-    for i_atom in atom_indices:
-        atom_proxy.load(i_atom)
-        vertices.append(atom_proxy.pos.tuple())
-        radii.append(atom_proxy.radius)
-
+    vertices, radii = soup.get_vertices_and_radii(atom_indices)
     return calculate_asa_from_vertices_and_radii(vertices, radii, probe, n_sphere_point)
 
 
