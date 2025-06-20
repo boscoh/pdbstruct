@@ -89,7 +89,7 @@ def calculate_asa_from_vertices_and_radii(
     """
     spacehash = SpaceHash(vertices)
     sphere_points = generate_sphere_points(n_sphere_point)
-    test_point = [0.0, 0.0, 0.0]
+    point = [0.0, 0.0, 0.0]
 
     # Initialize areas list with zeros for all vertices
     areas = [0.0] * len(vertices)
@@ -107,15 +107,15 @@ def calculate_asa_from_vertices_and_radii(
         for sphere_point in sphere_points:
             is_accessible = True
 
-            test_point[0] = sphere_point[0] * radius_i + vertex_i[0]
-            test_point[1] = sphere_point[1] * radius_i + vertex_i[1]
-            test_point[2] = sphere_point[2] * radius_i + vertex_i[2]
+            point[0] = sphere_point[0] * radius_i + vertex_i[0]
+            point[1] = sphere_point[1] * radius_i + vertex_i[1]
+            point[2] = sphere_point[2] * radius_i + vertex_i[2]
 
             for i_neighbour in reorder_range(n_neighbor, i_neighbour_start):
                 j_vertex = neighbor_vertex_indices[i_neighbour]
                 radius_j = radii[j_vertex] + probe
                 vertex_j = spacehash.vertices[j_vertex]
-                if pos_distance_sq(vertex_j, test_point) < radius_j * radius_j:
+                if pos_distance_sq(vertex_j, point) < radius_j * radius_j:
                     i_neighbour_start = i_neighbour
                     is_accessible = False
                     break

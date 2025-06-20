@@ -425,7 +425,9 @@ def pymol(input_file, output_file):
     open(pml, "w").write(template)
 
     if shutil.which("pymol"):
-        cmd = f"cd {input_dir}; pymol {os.path.basename(pml)}"
+        cmd = f"pymol {os.path.basename(pml)}"
+        if input_dir:
+            cmd = f"cd {input_dir}; " + cmd
         logger.info(f"Pymol script: `{cmd}`")
         os.system(cmd)
 
@@ -562,7 +564,7 @@ def main():
         type=bool,
         default=False,
         is_flag=True,
-        help="Show hollow spheres in pymol (if found)"
+        help="Show hollow spheres in pymol (if found)",
     )
     def cli(
         input_file,
@@ -573,7 +575,7 @@ def main():
         surface_probe,
         include_waters,
         bfactor_probe,
-            pymol,
+        pymol,
     ):
         """
         Hollow (c) 2025 Bosco Ho & Franz Gruswitz.
