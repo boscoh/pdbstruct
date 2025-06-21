@@ -55,7 +55,7 @@ Please refer to the [website](https://boscoh.github.io/pdbstruct/) for illustrat
   2) The [channel surface]( https://boscoh.github.io/pdbstruct/channel.html) of a phosphate proin:
       
 
-## Automated Surface Detection Mode
+### Automated Surface Detection Mode
 
 In the automated (also the default) mode, a grid is constructed over the entire protein. To analyze large proteins, due to the large size of the resultant grid, use only coarse grid spacings of 1.0 angstroms or 0.5 angstroms. 
 
@@ -63,7 +63,7 @@ The automated mode requires several intermediate calculations. The Accessible Su
 
 
 
-## Constrained Mode
+### Constrained Mode
 
 In the constrained mode, either a sphere or a cylinder is specified in a separate file. Grid points are constructed within these constraints, and thus, there is no need for the costly calculation that sweeps over the entire surface. 
 
@@ -113,7 +113,7 @@ For the cylinder constraint, 'chain1' 'res1' and 'atom1' refers to the center of
 
 
 
-## Default options
+### Default options
   
 Default values for various parameters are stored in hollow.txt. If you use the program a lot, you might want to fine tune these options.
             
@@ -139,20 +139,12 @@ In the automatic analysis mode, we want to generate fake atoms in clefts. We sta
 
 Three other options are also given, and these relate to the chemistry of the fake atoms in the resultant PDB file. There is also the choice of whether the atoms are written as 'ATOM' or 'HETATM' in the PDB file. The default is 'ATOM' even though water is typically written out as 'HETATM' in order to exploit PyMol. In PyMol, molecular surfaces are only generated for polymers, labeled with 'ATOM'. You can't generate molecular surfaces for 'HETATM' entries.
 
-
-
-  ## Atomic radii
-  
-In order to calculate the accessible surface area, we need the atomic radii. In the program, a set of standard atomic radii are read from the radii.txt. Edit this file to add or change radii for different elements. If the element is not defined, we give it a default of 1.8 angstroms (identified as element '.' in the radii.txt).
-
-
-
-  ## B-factors
+  ### B-factors
 
 We also calculate appropriate B-factors of every fake atom, by averaging over the heavy protein atoms around each fake atom. This is controlled by the command-line option 'BFACTOR_PROBE'.
 
 
-  ## Works with PyMol
+  ### Works with PyMol
 
 We developed this program with output designed to be easily viewed and manipulated with PyMol, an open-source protein viewer. By default, the hollow spheres are stored with the "ATOM" field as water oxygen molecules. Pymol can draw the molecular surface of overlapping fake water molecules as it interprets "ATOM" as if the atoms belong to a pseudo polymer.
 
