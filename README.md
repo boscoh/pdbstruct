@@ -14,7 +14,7 @@ which is capable of forming a foundation for efficient protein analysis:
 
 - modern python3 packaging
 - mmCIF parsers and writers
-- memory efficient representation of protein, noticeable for larger proteins
+- memory efficient representation of protein
 - spatial hashing for fast pair-wise search
 
 
