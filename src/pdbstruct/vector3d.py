@@ -67,25 +67,21 @@ class Vector3d:
         self._data[2] = float(value)
 
     def __getitem__(self, index):
-        """Allow indexing: v[0] = x, v[1] = y, v[2] = z"""
         if 0 <= index <= 2:
             return self._data[index]
         else:
             raise IndexError("Vector3d index out of range (0-2)")
 
     def __setitem__(self, index, value):
-        """Allow setting via indexing: v[0] = x, v[1] = y, v[2] = z"""
         if 0 <= index <= 2:
             self._data[index] = float(value)
         else:
             raise IndexError("Vector3d index out of range (0-2)")
 
     def __len__(self):
-        """Return length of vector (always 3 for 3D vector)"""
         return 3
 
     def __iter__(self):
-        """Allow iteration over vector components"""
         return iter(self._data)
 
     def __add__(self, rhs):
@@ -112,15 +108,18 @@ class Vector3d:
     def __repr__(self):
         return "Vector3d( %f, %f, %f )" % (self[0], self[1], self[2])
 
+    def copy(self):
+        return Vector3d(self[0], self[1], self[2])
+
+    def tuple(self):
+        return tuple(self._data)
+
     def set(self, x, y, z):
         """Set vector components"""
         self[0] = x
         self[1] = y
         self[2] = z
         return self
-
-    def copy(self):
-        return Vector3d(self[0], self[1], self[2])
 
     def length(self):
         return vec_length(self)
@@ -141,22 +140,16 @@ class Vector3d:
         matrix.transform_vec(self)
         return self
 
-    def tuple(self):
-        return tuple(self._data)
-
 
 def add_vec(a, b):
-    """Add two vectors"""
     return Vector3d(a[0] + b[0], a[1] + b[1], a[2] + b[2])
 
 
 def sub_vec(a, b):
-    """Subtract vector b from vector a"""
     return Vector3d(a[0] - b[0], a[1] - b[1], a[2] - b[2])
 
 
 def is_vec_equal(a, b):
-    """Check if two vectors are equal within tolerance"""
     return (
         is_near_zero(math.fabs(a[0] - b[0]))
         and is_near_zero(math.fabs(a[1] - b[1]))
@@ -188,16 +181,12 @@ def dot(a, b):
 
 
 def cross_product_vec(a, b):
-    """Calculate cross product of two vectors"""
     return Vector3d(
         a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]
     )
 
 
 def is_vec_parallel(a, b, tolerance=SMALL) -> bool:
-    """
-    Test if two vectors are parallel (or anti-parallel).
-    """
     if vec_length(a) < tolerance or vec_length(b) < tolerance:
         return True
     cross = cross_product_vec(a, b)
@@ -205,14 +194,12 @@ def is_vec_parallel(a, b, tolerance=SMALL) -> bool:
 
 
 def scaled_vec(v, scale):
-    """Return scaled copy of vector"""
     result = v.copy()
     result.scale(scale)
     return result
 
 
 def normalized_vec(v):
-    """Return normalized copy of vector"""
     length = vec_length(v)
     if is_near_zero(length):
         return Vector3d(0.0, 0.0, 0.0)
@@ -220,7 +207,6 @@ def normalized_vec(v):
 
 
 def parallel_vec(v, axis):
-    """Return component of vector parallel to axis"""
     axis_len = vec_length(axis)
     if is_near_zero(axis_len):
         return v.copy()
@@ -231,7 +217,6 @@ def parallel_vec(v, axis):
 
 
 def perpendicular_vec(v, axis):
-    """Return component of vector perpendicular to axis"""
     parallel = parallel_vec(v, axis)
     return sub_vec(v, parallel)
 
@@ -435,14 +420,12 @@ class Matrix3d:
 
 
 def transformed_vec(v, matrix: Matrix3d):
-    """Return transformed copy of vector"""
     result = v.copy()
     matrix.transform_vec(result)
     return result
 
 
 def rotation_at_origin(axis, theta):
-    """matrix to rotate a vector at origin"""
     v = normalized_vec(axis)
 
     c = math.cos(float(theta))
@@ -467,7 +450,6 @@ def rotation_at_origin(axis, theta):
 
 
 def translation(p):
-    """matrix to translate a vector"""
     m = Matrix3d()
     m.elem30 = p[0]
     m.elem31 = p[1]
@@ -476,7 +458,6 @@ def translation(p):
 
 
 def rotation_at_center(axis, theta, center):
-    """matrix to rotate around an axis at center"""
     rot = rotation_at_origin(axis, theta)
     trans = translation(sub_vec(center, transformed_vec(center, rot)))
     return trans * rot
