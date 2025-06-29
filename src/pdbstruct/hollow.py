@@ -284,7 +284,7 @@ def get_cylinder_constraint_fn(center1, center2, radius):
         if vector3d.dot(pos1, axis12) < 0:
             return False
         pos1_perp = pos1.perpendicular_vec(axis12)
-        if pos1_perp.mag() > radius:
+        if pos1_perp.length() > radius:
             return False
         pos2 = pos - center2
         if vector3d.dot(pos2, axis12) > 0:

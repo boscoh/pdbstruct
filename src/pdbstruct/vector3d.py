@@ -122,7 +122,7 @@ class Vector3d:
     def copy(self):
         return Vector3d(self[0], self[1], self[2])
 
-    def mag(self):
+    def length(self):
         return vec_length(self)
 
     def scale(self, scale):

@@ -180,7 +180,7 @@ class TestVector3d(unittest.TestCase):
 
         # Test length methods
         v.set(3.0, 4.0, 0.0)
-        self.assertEqual(v.mag(), 5.0)
+        self.assertEqual(v.length(), 5.0)
 
         # Test scale method
         v.scale(2.0)
@@ -200,12 +200,12 @@ class TestVector3d(unittest.TestCase):
         # Test normalize method
         v.set(3.0, 4.0, 0.0)
         v.normalize()
-        self.assertAlmostEqual(v.mag(), 1.0, places=6)
+        self.assertAlmostEqual(v.length(), 1.0, places=6)
 
         # Test normal_vec method
         v.set(3.0, 4.0, 0.0)
         v.normalize()
-        self.assertAlmostEqual(v.mag(), 1.0, places=6)
+        self.assertAlmostEqual(v.length(), 1.0, places=6)
 
         # Test tuple method
         v.set(1.0, 2.0, 3.0)
@@ -258,7 +258,7 @@ class TestVector3d(unittest.TestCase):
 
         # Test normalize_vec_inplace
         v.normalize()
-        self.assertAlmostEqual(v.mag(), 1.0, places=6)
+        self.assertAlmostEqual(v.length(), 1.0, places=6)
 
         # Test normalize_vec
         v.set(6.0, 8.0, 0.0)
@@ -531,7 +531,7 @@ class TestMatrix3d(unittest.TestCase):
         x = get_random_vector()
         rotation = vector3d.rotation_at_origin(get_random_vector(), random.random())
         y = vector3d.transformed_vec(x, rotation)
-        self.assertAlmostEqual(x.mag(), y.mag(), 6)
+        self.assertAlmostEqual(x.length(), y.length(), 6)
 
     def test_rotated_pos(self):
         """Test RotatedPos function."""
@@ -608,7 +608,7 @@ class TestAdvancedFunctions(unittest.TestCase):
 
         neg_op = -v1
         sum_vec = neg_op + v1
-        self.assertTrue(vector3d.is_near_zero(sum_vec.mag()))
+        self.assertTrue(vector3d.is_near_zero(sum_vec.length()))
 
     def test_mathematical_properties(self):
         """Test mathematical properties of vector operations."""
