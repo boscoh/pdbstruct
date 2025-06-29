@@ -482,7 +482,7 @@ class TestMatrix3d(unittest.TestCase):
         m = vector3d.Matrix3d()  # Identity matrix
         v = vector3d.Vector3d(1.0, 2.0, 3.0)
 
-        v_transformed = m.transformed_vec(v)
+        v_transformed = vector3d.transformed_vec(v, m)
         self.assertTrue(vector3d.is_vec_equal(v, v_transformed))
         self.assertIsNot(v, v_transformed)
 
@@ -494,7 +494,7 @@ class TestMatrix3d(unittest.TestCase):
 
         # Create rotation matrix around y-axis by 90 degrees
         rotation = vector3d.rotation_at_origin(y, radians(90))
-        ry_x = rotation.transformed_vec(x)
+        ry_x = vector3d.transformed_vec(x, rotation)
         ry_x.scale(-1)
 
         self.assertTrue(vector3d.is_vec_parallel(ry_x, z))
@@ -521,7 +521,7 @@ class TestMatrix3d(unittest.TestCase):
         y = vector3d.Vector3d(0, get_random_real(), 0)
 
         translation = vector3d.translation(y)
-        x_and_y = translation.transformed_vec(x)
+        x_and_y = vector3d.transformed_vec(x, translation)
         x_plus_y = vector3d.add_vec(x, y)
 
         self.assertTrue(vector3d.is_vec_equal(x_plus_y, x_and_y))
@@ -530,7 +530,7 @@ class TestMatrix3d(unittest.TestCase):
         """Test that rotation preserves vector length"""
         x = get_random_vector()
         rotation = vector3d.rotation_at_origin(get_random_vector(), random.random())
-        y = rotation.transformed_vec(x)
+        y = vector3d.transformed_vec(x, rotation)
         self.assertAlmostEqual(x.mag(), y.mag(), 6)
 
     def test_rotated_pos(self):
@@ -560,14 +560,14 @@ class TestMatrix3d(unittest.TestCase):
         x = get_random_vector()
         result_individual = x.copy()
         for matrix in matrices:
-            result_individual = matrix.transformed_vec(result_individual)
+            result_individual = vector3d.transformed_vec(result_individual, matrix)
 
         # Combine matrices first, then apply
         combined_matrix = vector3d.Matrix3d()  # Identity matrix
         for matrix in matrices:
             combined_matrix = matrix * combined_matrix
 
-        result_combined = combined_matrix.transformed_vec(x)
+        result_combined = vector3d.transformed_vec(x, combined_matrix)
 
         self.assertTrue(vector3d.is_vec_equal(result_individual, result_combined))
 

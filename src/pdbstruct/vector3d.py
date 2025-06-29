@@ -40,29 +40,43 @@ class Vector3d:
     """
 
     def __init__(self, x=0.0, y=0.0, z=0.0):
-        self.x = x
-        self.y = y
-        self.z = z
+        self._data = [float(x), float(y), float(z)]
+
+    @property
+    def x(self):
+        return self._data[0]
+
+    @x.setter
+    def x(self, value):
+        self._data[0] = float(value)
+
+    @property
+    def y(self):
+        return self._data[1]
+
+    @y.setter
+    def y(self, value):
+        self._data[1] = float(value)
+
+    @property
+    def z(self):
+        return self._data[2]
+
+    @z.setter
+    def z(self, value):
+        self._data[2] = float(value)
 
     def __getitem__(self, index):
         """Allow indexing: v[0] = x, v[1] = y, v[2] = z"""
-        if index == 0:
-            return self.x
-        elif index == 1:
-            return self.y
-        elif index == 2:
-            return self.z
+        if 0 <= index <= 2:
+            return self._data[index]
         else:
             raise IndexError("Vector3d index out of range (0-2)")
 
     def __setitem__(self, index, value):
         """Allow setting via indexing: v[0] = x, v[1] = y, v[2] = z"""
-        if index == 0:
-            self.x = value
-        elif index == 1:
-            self.y = value
-        elif index == 2:
-            self.z = value
+        if 0 <= index <= 2:
+            self._data[index] = float(value)
         else:
             raise IndexError("Vector3d index out of range (0-2)")
 
@@ -72,9 +86,7 @@ class Vector3d:
 
     def __iter__(self):
         """Allow iteration over vector components"""
-        yield self.x
-        yield self.y
-        yield self.z
+        return iter(self._data)
 
     def __add__(self, rhs):
         return add_vec(self, rhs)
@@ -126,29 +138,11 @@ class Vector3d:
         return self
 
     def transform(self, matrix):
-        x = (
-            matrix.elem00 * self[0]
-            + matrix.elem10 * self[1]
-            + matrix.elem20 * self[2]
-            + matrix.elem30
-        )
-        y = (
-            matrix.elem01 * self[0]
-            + matrix.elem11 * self[1]
-            + matrix.elem21 * self[2]
-            + matrix.elem31
-        )
-        z = (
-            matrix.elem02 * self[0]
-            + matrix.elem12 * self[1]
-            + matrix.elem22 * self[2]
-            + matrix.elem32
-        )
-        self[0], self[1], self[2] = x, y, z
+        matrix.transform_vec(self)
         return self
 
     def tuple(self):
-        return (self[0], self[1], self[2])
+        return tuple(self._data)
 
 
 def add_vec(a, b):
@@ -242,13 +236,6 @@ def perpendicular_vec(v, axis):
     return sub_vec(v, parallel)
 
 
-def transformed_vec(v, matrix):
-    """Return transformed copy of vector"""
-    result = v.copy()
-    result.transform(matrix)
-    return result
-
-
 def normalize_angle(angle):
     while abs(angle) > math.pi:
         if angle > math.pi:
@@ -304,8 +291,8 @@ def pos_dihedral(p1, p2, p3, p4):
 
 
 def rotated_pos(theta, anchor, center, pos):
-    return rotation_at_center(sub_vec(center, anchor), theta, center).transformed_vec(
-        pos
+    return transformed_vec(
+        pos, rotation_at_center(sub_vec(center, anchor), theta, center)
     )
 
 
@@ -437,12 +424,21 @@ class Matrix3d:
             c.set_elem(3, i, val)
         return c
 
-    def transformed_vec(self, v):
+    def transform_vec(self, v):
         # v'[i] = sum(over j) M[j][i] v[j]
         x = self.elem00 * v[0] + self.elem10 * v[1] + self.elem20 * v[2] + self.elem30
         y = self.elem01 * v[0] + self.elem11 * v[1] + self.elem21 * v[2] + self.elem31
         z = self.elem02 * v[0] + self.elem12 * v[1] + self.elem22 * v[2] + self.elem32
-        return Vector3d(x, y, z)
+        v[0] = x
+        v[1] = y
+        v[2] = z
+
+
+def transformed_vec(v, matrix: Matrix3d):
+    """Return transformed copy of vector"""
+    result = v.copy()
+    matrix.transform_vec(result)
+    return result
 
 
 def rotation_at_origin(axis, theta):
@@ -482,7 +478,7 @@ def translation(p):
 def rotation_at_center(axis, theta, center):
     """matrix to rotate around an axis at center"""
     rot = rotation_at_origin(axis, theta)
-    trans = translation(sub_vec(center, rot.transformed_vec(center)))
+    trans = translation(sub_vec(center, transformed_vec(center, rot)))
     return trans * rot
 
 
@@ -497,10 +493,10 @@ def superposition(ref1, ref2, ref3, mov1, mov2, mov3):
         axis = cross_product_vec(mov_diff, ref_diff)
         torsion = vec_dihedral(ref_diff, axis, mov_diff)
         rot = rotation_at_origin(axis, torsion)
-        trans = translation(sub_vec(ref2, rot.transformed_vec(mov2)))
+        trans = translation(sub_vec(ref2, transformed_vec(mov2, rot)))
         m1 = trans * rot
 
-    mov_diff = sub_vec(ref2, m1.transformed_vec(mov3))
+    mov_diff = sub_vec(ref2, transformed_vec(mov3, m1))
     ref_diff = sub_vec(ref2, ref3)
 
     m: Matrix3d
@@ -510,7 +506,7 @@ def superposition(ref1, ref2, ref3, mov1, mov2, mov3):
         axis = sub_vec(ref2, ref1)
         torsion = vec_dihedral(ref_diff, axis, mov_diff)
         m2 = rotation_at_origin(axis, torsion)
-        m3 = translation(sub_vec(ref2, m2.transformed_vec(ref2)))
+        m3 = translation(sub_vec(ref2, transformed_vec(ref2, m2)))
         m = m3 * m2 * m1
 
     return m
