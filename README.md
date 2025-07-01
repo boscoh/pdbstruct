@@ -1,14 +1,13 @@
 
   # pdbstruct
 
-`pdbstruct` provides a set of tools for fast protein analysis in python. Current tools:
+`pdbstruct` provides a set of tools for fast protein analysis in python:
 
 1. `pdbstruct hollow` - generates hollow atoms to facilitate hi-res display of voids, pockets and channels.
 2. `pdbstruct volume` - volume calculator and generator of fake atoms that fill the space.
-3. `pdstruct asa` - ASA calculator and saves a PDB/CIF file with ASA in the bfactor column.
+3. `pdstruct asa` - ASA calculator and saves atomic ASA to the bfactor column.
 
-This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package,
-which is capable of forming a foundation for efficient protein analysis:
+This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package for efficient protein analysis:
 
 - modern python3 packaging
 - mmCIF parsers and writers
@@ -34,7 +33,7 @@ which is capable of forming a foundation for efficient protein analysis:
 
 Hollow was originally developed by Bosco Ho and Franz Gruswitz to solve the problem of displaying protein channels in high resolution. 
 
-To read more about Hollow, please refer to [Hollow](https://boscoh.github.io/hollow/).
+To read more about Hollow, please refer to [here](https://boscoh.github.io/hollow/).
 
   ## Change log
 
