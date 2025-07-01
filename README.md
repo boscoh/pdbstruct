@@ -1,20 +1,19 @@
 
   # pdbstruct
 
-`pdbstruct` provides a set of tools for efficient protein analysis in python:
+`pdbstruct` - tools for efficient protein analysis in python:
 
 1. `pdbstruct hollow` - generates hollow atoms for hi-res display of voids, pockets and channels.
 2. `pdbstruct volume` - volume calculator and generator of fake atoms that fill the space.
 3. `pdstruct asa` - calculates and saves atomic ASA to the bfactor column.
 
-This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package for efficient protein analysis:
+This was formerly known as [Hollow](https://github.com/boscoh/hollow) but has been renamed to reflect its potential use for other packages:
 
-- modern python3 packaging
+- modern packaging and cli
 - mmCIF parsers and writers
 - memory efficient representation of protein
 - spatial hashing for fast pair-wise search
 - 3d boolean grid
-- progress bars
 
 
 ## Quick install
@@ -27,7 +26,7 @@ This was formerly known as [Hollow](https://github.com/boscoh/hollow) but signif
 
        >> uvx pdbstruct
 
-4. Another alternative is to use [pipx](https://github.com/pypa/pipx)
+4. Another alternative is to use [pipx](https://github.com/pypa/pipx) to install a gloabl cli:
 
        >> pipx install pdbstruct
 
@@ -37,16 +36,11 @@ This was formerly known as [Hollow](https://github.com/boscoh/hollow) but signif
 
   ## Hollow
 
-Hollow was originally developed by Bosco Ho and Franz Gruswitz to solve the problem of displaying protein channels in high resolution. 
-
-To read more about Hollow, please refer to [here](https://boscoh.github.io/hollow/).
+Hollow was originally developed by Bosco Ho and Franz Gruswitz to solve the problem of displaying protein channels in high resolution. Read more about [Hollow](https://boscoh.github.io/hollow/).
 
   ## Change log
 
-pdbstruct is a rename of hollow, as the latest version of hollow can serve
-as a base for efficient tools for protein analysis.
-
-- Version 2.0 (Jun 2025). Python 3. pypi. mmCif. Memory effient
+- Version 2.0 (Jun 2025). Renamed to pdbstruct. Python 3. pypi. mmCif. Memory effient
     representation of protein. Spatial hashing to speed pair-wise
     search. Removed idle functions.
 - Version 1.3 (May 2020). Python 3/2 compatible.</li>
