@@ -7,7 +7,7 @@
 2. `pdbstruct volume` - volume calculator and generator of fake atoms that fill the space.
 3. `pdstruct asa` - calculates and saves atomic ASA to the bfactor column.
 
-This was formerly known as [Hollow](https://github.com/boscoh/hollow) but has been renamed to reflect its potential use for other packages:
+This was formerly known as [Hollow](https://github.com/boscoh/hollow) but was renamed because significant improvements in v2.0 means the package can serve as a general module for efficient protein analysis:
 
 - modern packaging and cli
 - mmCIF parsers and writers
@@ -40,7 +40,7 @@ Hollow was originally developed by Bosco Ho and Franz Gruswitz to solve the prob
 
   ## Change log
 
-- Version 2.0 (Jun 2025). Renamed to pdbstruct. Python 3. pypi. mmCif. Memory effient
+- Version 2.0 (Jun 2025). Renamed to pdbstruct. Python 3. Pypi. MmCif. Memory effient
     representation of protein. Spatial hashing to speed pair-wise
     search. Removed idle functions.
 - Version 1.3 (May 2020). Python 3/2 compatible.</li>
