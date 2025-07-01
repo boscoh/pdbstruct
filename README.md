@@ -1,11 +1,11 @@
 
   # pdbstruct
 
-`pdbstruct` provides a set of tools for fast protein analysis in python:
+`pdbstruct` provides a set of tools for efficient protein analysis in python:
 
-1. `pdbstruct hollow` - generates hollow atoms to facilitate hi-res display of voids, pockets and channels.
+1. `pdbstruct hollow` - generates hollow atoms for hi-res display of voids, pockets and channels.
 2. `pdbstruct volume` - volume calculator and generator of fake atoms that fill the space.
-3. `pdstruct asa` - ASA calculator and saves atomic ASA to the bfactor column.
+3. `pdstruct asa` - calculates and saves atomic ASA to the bfactor column.
 
 This was formerly known as [Hollow](https://github.com/boscoh/hollow) but significant improvements resulted in a more general package for efficient protein analysis:
 
@@ -13,6 +13,8 @@ This was formerly known as [Hollow](https://github.com/boscoh/hollow) but signif
 - mmCIF parsers and writers
 - memory efficient representation of protein
 - spatial hashing for fast pair-wise search
+- 3d boolean grid
+- progress bars
 
 
 ## Quick install
@@ -21,11 +23,15 @@ This was formerly known as [Hollow](https://github.com/boscoh/hollow) but signif
 
        >> uv tool install pdbstruct@latest
 
-2. Another alternative is to use [pipx](https://github.com/pypa/pipx)
+2. Or you can use ux to run the command in an isolated enviornment:
+
+       >> uvx pdbstruct
+
+4. Another alternative is to use [pipx](https://github.com/pypa/pipx)
 
        >> pipx install pdbstruct
 
-3. If you have a [venv](https://docs.python.org/3/library/venv.html) python environment setup, then:
+5. Or drop into your [venv](https://docs.python.org/3/library/venv.html) python environment:
 
        >> pip install pdbstruct
 
