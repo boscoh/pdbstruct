@@ -12,7 +12,7 @@ This was formerly known as [Hollow](https://github.com/boscoh/hollow) but was re
 - modern packaging and cli
 - mmCIF parsers and writers
 - memory efficient representation of protein
-- spatial hashing for fast pair-wise search
+- spatial hashing for fast close-pair search
 - 3d boolean grid
 
 
